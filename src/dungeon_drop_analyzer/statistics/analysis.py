@@ -34,9 +34,9 @@ class ItemAnalysis:
     item: str
     proportions: list[DungeonProportion]
     global_test: TestResult
-    p_holm_across_items: float | None  # Holm sobre os testes globais de todos os itens
-    pairwise: list[PairResult]  # Holm dentro da família do item
-    effects: dict[tuple[str, str], EffectSize]  # (a, b) -> efeito de a em relação a b
+    p_holm_across_items: float | None
+    pairwise: list[PairResult]
+    effects: dict[tuple[str, str], EffectSize]
 
 
 def analyze_items(
@@ -69,7 +69,7 @@ def analyze_items(
                     name, xd, nd, xd / nd if nd else None, wilson_interval(xd, nd), nd < min_n
                 )
             )
-        table = np.column_stack([x, n - x])  # 5×2: obtido / não obtido
+        table = np.column_stack([x, n - x])
         g = homogeneity_test(table, n_sim=n_sim, seed=seed)
         pairs = pairwise_tests(x, n, dungeons)
         effects = {}

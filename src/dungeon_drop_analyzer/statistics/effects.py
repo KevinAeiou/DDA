@@ -10,11 +10,11 @@ from scipy.stats import norm
 
 @dataclass(frozen=True)
 class EffectSize:
-    diff_pp: float | None  # (p_a - p_b) em pontos percentuais
-    ratio: float | None  # p_a / p_b; None se p_b == 0 ou denominador nulo
+    diff_pp: float | None
+    ratio: float | None
     odds_ratio: float | None
     odds_ratio_ci: tuple[float, float] | None
-    odds_ratio_corrected: bool  # True se aplicada correção de Haldane-Anscombe (+0,5)
+    odds_ratio_corrected: bool
     notes: tuple[str, ...]
 
 
