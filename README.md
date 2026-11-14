@@ -13,8 +13,8 @@ e **não presume** que masmorras mais difíceis dão melhores recompensas — is
 
 | Documento | Conteúdo |
 |---|---|
-| [SPECIFICATION.md](SPECIFICATION.md) | Especificação de produto, requisitos, metodologia estatística e modelo de dados |
-| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Plano de implementação por fases, com critérios de saída |
+| [SPECIFICATION.md](docs/SPECIFICATION.md) | Especificação de produto, requisitos, metodologia estatística e modelo de dados |
+| [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Plano de implementação por fases, com critérios de saída |
 
 ## Stack
 
