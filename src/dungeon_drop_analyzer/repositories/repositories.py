@@ -127,6 +127,15 @@ class RunRepository:
             stmt = stmt.limit(limit)
         return list(self.session.scalars(stmt).unique())
 
+    def distinct_game_versions(self) -> list[str]:
+        stmt = (
+            select(Run.game_version)
+            .where(Run.game_version.is_not(None))
+            .distinct()
+            .order_by(Run.game_version)
+        )
+        return list(self.session.scalars(stmt))
+
     def count(self, flt: RunFilter | None = None) -> int:
         stmt = self._apply(select(func.count(Run.id)), flt)
         return int(self.session.scalar(stmt) or 0)
