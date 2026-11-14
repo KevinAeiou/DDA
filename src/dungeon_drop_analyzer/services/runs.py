@@ -167,6 +167,10 @@ class RunService:
         with session_scope(self._factory) as session:
             return RunRepository(session).list(flt, descending, limit, offset)
 
+    def game_versions(self) -> list[str]:
+        with session_scope(self._factory) as session:
+            return RunRepository(session).distinct_game_versions()
+
     def count(self, flt: RunFilter | None = None) -> int:
         with session_scope(self._factory) as session:
             return RunRepository(session).count(flt)

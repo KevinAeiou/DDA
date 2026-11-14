@@ -27,7 +27,7 @@ dev = [
   "pyinstaller>=6.8",
 ]
 
-[project.scripts]
+[project.gui-scripts]
 dda = "dungeon_drop_analyzer.main:main"
 
 [tool.setuptools.packages.find]

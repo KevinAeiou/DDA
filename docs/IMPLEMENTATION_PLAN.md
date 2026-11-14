@@ -54,10 +54,12 @@ Decisões e convenções: [PERSISTENCE.md](PERSISTENCE.md).
 **Saída (critérios 2–5):** testes de integração com SQLite temporário; persistência após reabertura; filtros
 corretos; validações (1 item por incursão, duração ≥ 0, dificuldade 1–5, nomes únicos).
 
-## Fase 3 — Interface base e coleta ☐
+## Fase 3 — Interface base e coleta ☑
 
 - Janela principal PySide6 em pt-BR, menu (seção 10).
 - Páginas: Masmorras, Itens, Registrar incursão (poucos cliques, opcionais recolhidos), Histórico com filtros.
+
+Decisões e convenções: [UI.md](UI.md).
 
 **Saída:** fluxo completo de cadastro → registro → histórico, com feedback de sucesso/erro.
 
