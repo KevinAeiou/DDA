@@ -1,0 +1,33 @@
+# Ambiente virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build / empacotamento
+build/
+dist/
+*.spec.bak
+
+# Dados locais do usuário (nunca versionar dados reais)
+data/*
+!data/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+logs/
+*.log
+
+# IDE / SO
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
