@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Cria a venv (.venv) e instala o projeto em modo editável com dependências de desenvolvimento.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 [ -d .venv ] || python -m venv .venv

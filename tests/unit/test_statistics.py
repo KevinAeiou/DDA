@@ -17,8 +17,6 @@ from dungeon_drop_analyzer.statistics import (
 )
 from dungeon_drop_analyzer.statistics.homogeneity import chi2_adequate, expected_counts
 
-# --- Wilson -----------------------------------------------------------------------------------
-
 
 @pytest.mark.parametrize("x,n", [(0, 10), (1, 10), (5, 10), (10, 10), (7, 50), (123, 1000)])
 def test_wilson_confere_com_statsmodels(x, n):
@@ -46,9 +44,6 @@ def test_amostra_insuficiente():
     assert insufficient_sample([49, 50, 0], min_n=50) == [True, False, True]
 
 
-# --- Holm -------------------------------------------------------------------------------------
-
-
 def test_holm_confere_com_statsmodels():
     p = [0.01, 0.04, 0.03, 0.005, 0.5, 0.2]
     esperado = multipletests(p, method="holm")[1]
@@ -61,14 +56,8 @@ def test_holm_exemplo_manual_e_limite():
     assert holm_adjust([]) == []
 
 
-# --- Homogeneidade ----------------------------------------------------------------------------
-
-TABELA_GRANDE = np.array(  # 5×3, esperadas altas
-    [[40, 35, 25], [30, 40, 30], [50, 30, 20], [35, 35, 30], [20, 50, 30]]
-)
-TABELA_ESPARSA = np.array(  # 5×4, muitas esperadas < 5
-    [[3, 1, 0, 1], [0, 2, 1, 2], [4, 0, 0, 1], [1, 1, 2, 0], [0, 3, 1, 1]]
-)
+TABELA_GRANDE = np.array([[40, 35, 25], [30, 40, 30], [50, 30, 20], [35, 35, 30], [20, 50, 30]])
+TABELA_ESPARSA = np.array([[3, 1, 0, 1], [0, 2, 1, 2], [4, 0, 0, 1], [1, 1, 2, 0], [0, 3, 1, 1]])
 
 
 def test_chi2_confere_com_scipy():
@@ -118,7 +107,7 @@ def test_diferenca_forte_rejeita():
 def test_linhas_e_colunas_nulas_sao_removidas():
     tabela = np.array([[10, 20, 0], [15, 15, 0], [0, 0, 0], [12, 18, 0], [20, 10, 0]])
     r = homogeneity_test(tabela)
-    assert r.dof == 3  # 4 masmorras × 2 itens efetivos
+    assert r.dof == 3
     assert r.n == tabela.sum()
 
 
@@ -134,9 +123,6 @@ def test_metodo_invalido_e_tabela_negativa():
         homogeneity_test(np.array([[1, -1], [2, 3]]))
 
 
-# --- Pareado ----------------------------------------------------------------------------------
-
-
 def test_pairwise_holm_na_familia_do_item():
     x, n = [30, 10, 12, 11, 10], [100] * 5
     res = pairwise_tests(x, n, list("ABCDE"))
@@ -144,7 +130,6 @@ def test_pairwise_holm_na_familia_do_item():
     raw = [r.p_raw for r in res]
     assert [r.p_holm for r in res] == pytest.approx(holm_adjust(raw))
     assert all(r.p_holm >= r.p_raw for r in res)
-    # A vs B é fortemente diferente
     ab = next(r for r in res if (r.a, r.b) == ("A", "B"))
     assert ab.method == "chi2" and ab.p_holm < 0.01
 
@@ -154,9 +139,6 @@ def test_pairwise_usa_fisher_em_amostra_pequena_e_trata_indefinidos():
     por_par = {(r.a, r.b): r for r in res}
     assert por_par[("A", "B")].method == "fisher_exact"
     assert por_par[("A", "C")].p_raw is None and por_par[("A", "C")].p_holm is None
-
-
-# --- Efeitos ----------------------------------------------------------------------------------
 
 
 def test_effect_size_valores_manuais():
@@ -181,9 +163,6 @@ def test_effect_size_denominador_nulo():
     assert e.diff_pp is None and e.odds_ratio is None and e.notes
 
 
-# --- Orquestração -----------------------------------------------------------------------------
-
-
 def test_analyze_items_estrutura_e_consistencia():
     dungeons = [f"D{i}" for i in range(1, 6)]
     items = ["I1", "I2", "I3"]
@@ -197,7 +176,7 @@ def test_analyze_items_estrutura_e_consistencia():
             assert prop.p == pytest.approx(prop.x / prop.n)
             assert prop.ci[0] <= prop.p <= prop.ci[1]
             assert not prop.insufficient
-        assert r.global_test.dof == 4  # tabela 5×2
+        assert r.global_test.dof == 4
         assert len(r.pairwise) == 10 and len(r.effects) == 10
     raw = [r.global_test.p_value for r in res]
     assert [r.p_holm_across_items for r in res] == pytest.approx(holm_adjust(raw))

@@ -16,7 +16,7 @@ DEFAULT_SEED = 12345
 
 @dataclass(frozen=True)
 class TestResult:
-    method: str  # "chi2", "monte_carlo" ou "indefinido"
+    method: str
     statistic: float | None
     dof: int | None
     p_value: float | None
@@ -31,8 +31,8 @@ def _clean(table) -> np.ndarray:
     t = np.asarray(table, dtype=np.int64)
     if t.ndim != 2 or (t < 0).any():
         raise ValueError("A tabela deve ser 2D com contagens não negativas.")
-    t = t[t.sum(axis=1) > 0]  # remove masmorras sem incursões
-    return t[:, t.sum(axis=0) > 0]  # remove itens nunca obtidos
+    t = t[t.sum(axis=1) > 0]
+    return t[:, t.sum(axis=0) > 0]
 
 
 def expected_counts(table: np.ndarray) -> np.ndarray:

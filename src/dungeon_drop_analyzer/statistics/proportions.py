@@ -6,7 +6,7 @@ import math
 
 from scipy.stats import norm
 
-DEFAULT_MIN_PER_DUNGEON = 50  # apenas piloto, não garante poder (spec 7.8)
+DEFAULT_MIN_PER_DUNGEON = 50
 
 
 def wilson_interval(x: int, n: int, confidence: float = 0.95) -> tuple[float, float] | None:

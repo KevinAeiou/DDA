@@ -1,4 +1,3 @@
-# Cria a venv (.venv) e instala o projeto em modo editável com dependências de desenvolvimento.
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root

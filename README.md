@@ -15,6 +15,7 @@ e **não presume** que masmorras mais difíceis dão melhores recompensas — is
 |---|---|
 | [SPECIFICATION.md](docs/SPECIFICATION.md) | Especificação de produto, requisitos, metodologia estatística e modelo de dados |
 | [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Plano de implementação por fases, com critérios de saída |
+| [STATISTICS.md](docs/STATISTICS.md) | Convenções e decisões do núcleo estatístico |
 
 ## Stack
 
