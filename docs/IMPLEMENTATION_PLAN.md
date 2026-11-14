@@ -14,7 +14,7 @@ Legenda: ☐ pendente · ☑ concluído
 
 **Saída:** venv criada, dependências instaladas, `pytest` passa.
 
-## Fase 1 — Núcleo estatístico (funções puras) ☐
+## Fase 1 — Núcleo estatístico (funções puras) ☑
 
 Primeiro por ser o maior risco técnico e independente de UI/banco (RF-06, RF-07, seção 7).
 
@@ -24,6 +24,18 @@ Primeiro por ser o maior risco técnico e independente de UI/banco (RF-06, RF-07
 - Teste por item (tabela 5×2), comparações pareadas, correção de Holm (por família).
 - Diferença em p.p., razão de proporções/odds ratio com tratamento de zeros.
 - Sinalização de amostra insuficiente.
+
+**Decisões (Fase 1):**
+- Pacote `statistics/`: `proportions` (Wilson), `homogeneity` (qui-quadrado/Monte Carlo/pareado), `multiplicity`
+  (Holm), `effects` (p.p., razão, odds ratio) e `analysis` (orquestração por item).
+- Critério de escolha do método: qui-quadrado se esperadas mín ≥ 1 e ≤ 20% das células < 5 (Cochran); caso
+  contrário, Monte Carlo por permutação com marginais fixas (padrão 10.000 simulações, semente 12345, ambos
+  reportados). Pareado: qui-quadrado sem correção ou Fisher exato 2×2 pelo mesmo critério.
+- Linhas/colunas totalmente nulas são removidas; tabela degenerada devolve método `indefinido` (p = None).
+- Holm aplicado em duas famílias distintas: pareadas dentro de cada item, e testes globais entre itens.
+- Zeros: razão indefinida vira `None` com nota; odds ratio usa Haldane-Anscombe (+0,5) com aviso.
+- Limite piloto de 50 incursões/masmorra é apenas sinalização, configurável (`min_n`).
+- Tendência ordinal por dificuldade (RF-08) fica para a Fase 4.
 
 **Saída (critérios 6–9):** testes contra valores de referência (SciPy/statsmodels e cálculos manuais), fixtures
 sintéticas identificadas, nenhuma dependência de UI ou banco.

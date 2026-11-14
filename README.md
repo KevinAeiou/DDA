@@ -7,7 +7,7 @@ Cada incursão concluída garante exatamente um item. O catálogo de itens é ca
 estima frequências, proporções com intervalo de Wilson de 95%, testes globais e por item (com correção de Holm)
 e **não presume** que masmorras mais difíceis dão melhores recompensas — isso é uma hipótese a investigar.
 
-> Status: **Fase 0 concluída** (fundação do repositório). Nenhuma funcionalidade implementada ainda.
+> Status: **Fases 0 e 1 concluídas** (fundação e núcleo estatístico). Ainda não há banco nem interface.
 
 ## Documentação
 
