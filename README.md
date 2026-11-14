@@ -7,7 +7,7 @@ Cada incursão concluída garante exatamente um item. O catálogo de itens é ca
 estima frequências, proporções com intervalo de Wilson de 95%, testes globais e por item (com correção de Holm)
 e **não presume** que masmorras mais difíceis dão melhores recompensas — isso é uma hipótese a investigar.
 
-> Status: **Fases 0 e 1 concluídas** (fundação e núcleo estatístico). Ainda não há banco nem interface.
+> Status: **Fases 0 a 2 concluídas** (fundação, núcleo estatístico e persistência/domínio). Ainda não há interface.
 
 ## Documentação
 
@@ -16,6 +16,7 @@ e **não presume** que masmorras mais difíceis dão melhores recompensas — is
 | [SPECIFICATION.md](docs/SPECIFICATION.md) | Especificação de produto, requisitos, metodologia estatística e modelo de dados |
 | [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Plano de implementação por fases, com critérios de saída |
 | [STATISTICS.md](docs/STATISTICS.md) | Convenções e decisões do núcleo estatístico |
+| [PERSISTENCE.md](docs/PERSISTENCE.md) | Banco, migrações, regras de domínio, filtros e auditoria |
 
 ## Stack
 

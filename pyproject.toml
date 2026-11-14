@@ -33,6 +33,9 @@ dda = "dungeon_drop_analyzer.main:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+dungeon_drop_analyzer = ["migrations/script.py.mako"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
