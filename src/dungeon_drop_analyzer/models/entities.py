@@ -45,9 +45,7 @@ CATEGORY_LABELS = {
     ItemCategory.PRECIOUS_BARS: "Barras preciosas",
 }
 
-CATEGORY_CHECK = "category IS NULL OR category IN ({})".format(
-    ", ".join(f"'{c.value}'" for c in ItemCategory)
-)
+CATEGORY_CHECK = "category IN ({})".format(", ".join(f"'{c.value}'" for c in ItemCategory))
 
 
 class AuditAction(enum.StrEnum):
@@ -77,7 +75,7 @@ class Item(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(NAME_LENGTH, collation="NOCASE"), unique=True)
-    category: Mapped[str | None] = mapped_column(String(NAME_LENGTH))
+    category: Mapped[str] = mapped_column(String(NAME_LENGTH))
     description: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("1"))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_default)

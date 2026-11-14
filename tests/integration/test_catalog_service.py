@@ -27,16 +27,16 @@ def test_nome_invalido(dungeons, items, nome):
     with pytest.raises(ValidationError):
         dungeons.create(nome, 1)
     with pytest.raises(ValidationError):
-        items.create(nome)
+        items.create(nome, "weapons")
 
 
 def test_nome_duplicado_ignora_caixa_e_espacos(dungeons, items):
     dungeons.create("Caverna", 1)
     with pytest.raises(DuplicateError):
         dungeons.create("  caverna ", 2)
-    items.create("Espada")
+    items.create("Espada", "weapons")
     with pytest.raises(DuplicateError):
-        items.create("ESPADA")
+        items.create("ESPADA", "armor")
 
 
 def test_nome_duplicado_na_edicao_mas_nao_consigo_mesmo(dungeons):
@@ -60,8 +60,11 @@ def test_item_categoria_e_inativacao(items):
     i = items.create("Anel", category=" accessories ")
     assert i.category == "accessories"
     assert items.update(i.id, category=ItemCategory.RELICS).category == "relics"
-    assert items.update(i.id, category="").category is None
-    assert items.update(i.id, category=None).category is None
+    with pytest.raises(ValidationError, match="obrigatória"):
+        items.update(i.id, category="")
+    with pytest.raises(ValidationError, match="obrigatória"):
+        items.update(i.id, category=None)
+    assert items.get(i.id).category == "relics"
     items.set_active(i.id, False)
     assert items.get(i.id).is_active is False
 
@@ -114,7 +117,19 @@ def test_todas_as_categorias_padrao_sao_aceitas(items):
 def test_categoria_fora_do_padrao_e_rejeitada(items, categoria):
     with pytest.raises(ValidationError, match="Categoria inválida"):
         items.create("X", category=categoria)
-    existente = items.create("Y")
+    existente = items.create("Y", "weapons")
     with pytest.raises(ValidationError):
         items.update(existente.id, category=categoria)
-    assert items.get(existente.id).category is None
+    assert items.get(existente.id).category == "weapons"
+
+
+@pytest.mark.parametrize("categoria", [None, "", "   "])
+def test_categoria_e_obrigatoria_no_cadastro(items, categoria):
+    with pytest.raises(ValidationError, match="obrigatória"):
+        items.create("Sem categoria", categoria)
+    assert items.list() == []
+
+
+def test_categoria_nao_pode_ser_omitida(items):
+    with pytest.raises(TypeError):
+        items.create("Sem categoria")

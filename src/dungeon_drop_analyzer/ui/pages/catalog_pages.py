@@ -137,7 +137,7 @@ class ItemsPage(_CatalogPage):
     new_label = "Novo item"
 
     def _extra_filters(self) -> list[QWidget]:
-        self.category_filter = make_category_combo("Todas as categorias")
+        self.category_filter = make_category_combo(empty_label="Todas as categorias")
         self.category_filter.currentIndexChanged.connect(lambda _: self.refresh())
         return [self.category_filter]
 

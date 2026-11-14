@@ -118,11 +118,10 @@ def test_dialogo_de_correcao_mantem_item_inativo_do_registro(qapp, services, see
     assert services.runs.get(run.id).notes == "ajuste"
 
 
-def test_dialogo_de_item_lista_as_oito_categorias_e_permite_sem_categoria(qapp, services):
+def test_dialogo_de_item_lista_as_oito_categorias_e_exige_selecao(qapp, services, dialogs):
     dialog = ItemDialog(services.items)
     rotulos = [dialog.category.itemText(i) for i in range(dialog.category.count())]
     assert rotulos == [
-        "Sem categoria",
         "Armas",
         "Armaduras",
         "Acessórios",
@@ -132,9 +131,14 @@ def test_dialogo_de_item_lista_as_oito_categorias_e_permite_sem_categoria(qapp, 
         "Consumíveis",
         "Barras preciosas",
     ]
+    assert dialog.category.currentIndex() == -1
     dialog.name.setText("Poção")
     dialog.accept()
-    assert services.items.list()[0].category is None
+    assert "Categoria é obrigatória" in dialogs.errors[-1]
+    assert services.items.list() == []
+    dialog.category.setCurrentIndex(dialog.category.findData("consumables"))
+    dialog.accept()
+    assert services.items.list()[0].category == "consumables"
 
 
 def test_dialogo_de_item_edita_categoria(qapp, services):

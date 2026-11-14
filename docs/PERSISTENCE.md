@@ -25,6 +25,8 @@ convertidas. A exibição em formato local fica para a interface.
 - Migração `0002`: categorias padrão de itens (ver abaixo). Como o SQLite não adiciona constraints a tabelas
   existentes, ela recria `items`; por isso `upgrade_database`/`downgrade_database` desligam as foreign keys
   durante a migração, executam `PRAGMA foreign_key_check` ao final (falhando se houver violação) e religam.
+- Migração `0003`: categoria de item obrigatória (`NOT NULL` e CHECK sem `NULL`), com a mesma recriação de
+  tabela e as mesmas verificações da `0002`.
 - Um teste garante que o esquema migrado é idêntico ao definido nos modelos, inclusive após a `0002` aplicada
   sobre dados existentes.
 - Constraints têm nomes determinísticos (convenção de nomes no `MetaData`).
@@ -40,12 +42,14 @@ convertidas. A exibição em formato local fica para a interface.
 Conjunto fixo de oito categorias (armas, armaduras, acessórios, relíquias, recursos de amplificação, recursos de artesanato, consumíveis e barras preciosas), definido por `ItemCategory` em `models/entities.py`, com o
 rótulo em português em `ItemCategory.label`. O banco guarda o código (`weapons`, `armor`, `accessories`,
 `relics`, `amplification_resources`, `crafting_resources`, `consumables`, `precious_bars`) e uma restrição
-CHECK impede qualquer outro valor. A categoria é opcional (`NULL` = sem categoria).
+CHECK impede qualquer outro valor. A categoria é obrigatória (`NOT NULL`).
 
-`ItemService` aceita o enum ou o código (texto vazio vira sem categoria) e rejeita qualquer outro valor com
+`ItemService` aceita o enum ou o código e rejeita ausência, texto vazio e qualquer outro valor com
 `ValidationError`. Na migração `0002`, categorias de texto livre existentes são convertidas quando coincidem
 com um rótulo padrão (sem diferenciar maiúsculas, plural/singular ou acentuação nos casos previstos); as
-demais viram sem categoria. Não havia dados reais antes desta mudança.
+demais ficam sem categoria. A migração `0003` torna a coluna obrigatória e, se ainda houver itens sem
+categoria, aborta listando os nomes (sem alterar o banco); atribua uma categoria a eles e atualize novamente.
+Não havia dados reais antes desta mudança.
 
 ## Camadas
 

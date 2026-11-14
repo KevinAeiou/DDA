@@ -39,17 +39,14 @@ def validate_difficulty(value: object) -> int:
     return value
 
 
-def validate_category(value: object) -> str | None:
-    if value is None:
-        return None
+def validate_category(value: object) -> str:
     if isinstance(value, ItemCategory):
         return value.value
+    if value is None or (isinstance(value, str) and not value.strip()):
+        raise ValidationError("Categoria é obrigatória.")
     if isinstance(value, str):
-        text = value.strip()
-        if not text:
-            return None
         try:
-            return ItemCategory(text).value
+            return ItemCategory(value.strip()).value
         except ValueError:
             pass
     valid = ", ".join(c.label for c in ItemCategory)

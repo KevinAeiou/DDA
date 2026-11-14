@@ -49,8 +49,8 @@ sintéticas identificadas, nenhuma dependência de UI ou banco.
   com filtros, edição/exclusão com auditoria.
 - Banco no diretório de dados do usuário (caminho configurável), logging rotativo.
 
-Decisões e convenções: [PERSISTENCE.md](PERSISTENCE.md). Inclui as categorias padrão de itens (migração
-`0002`), adicionadas após a Fase 3.
+Decisões e convenções: [PERSISTENCE.md](PERSISTENCE.md). Inclui as categorias padrão de itens (migrações
+`0002` e `0003`), adicionadas após a Fase 3.
 
 **Saída (critérios 2–5):** testes de integração com SQLite temporário; persistência após reabertura; filtros
 corretos; validações (1 item por incursão, duração ≥ 0, dificuldade 1–5, nomes únicos).

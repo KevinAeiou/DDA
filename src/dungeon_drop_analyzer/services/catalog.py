@@ -160,7 +160,7 @@ class ItemService(_CatalogService):
     def create(
         self,
         name: str,
-        category: ItemCategory | str | None = None,
+        category: ItemCategory | str,
         description: str | None = None,
         is_active: bool = True,
     ) -> Item:

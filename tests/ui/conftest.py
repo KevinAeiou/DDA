@@ -76,5 +76,5 @@ def dialogs(monkeypatch, qapp):
 @pytest.fixture
 def seeded(services):
     dungeons = [services.dungeons.create(f"Masmorra {i}", i) for i in range(1, 6)]
-    items = [services.items.create(n) for n in ("Espada", "Escudo", "Anel")]
+    items = [services.items.create(n, "weapons") for n in ("Espada", "Escudo", "Anel")]
     return dungeons, items

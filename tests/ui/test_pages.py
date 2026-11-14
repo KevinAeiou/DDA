@@ -76,8 +76,8 @@ def test_registro_so_lista_ativos_e_orienta_cadastro(qapp, services, dialogs):
     assert not page.save_button.isEnabled()
     assert "masmorras e itens" in page.hint.text()
     d = services.dungeons.create("A", 1)
-    i = services.items.create("X")
-    services.items.create("Y")
+    i = services.items.create("X", "weapons")
+    services.items.create("Y", "weapons")
     services.items.set_active(i.id, False)
     page.refresh()
     assert page.save_button.isEnabled()
@@ -203,7 +203,7 @@ def test_fluxo_completo_cadastro_registro_historico(qapp, services, settings, di
     janela = MainWindow(services, settings)
     janela.open_page("Masmorras")
     services.dungeons.create("Floresta", 2)
-    services.items.create("Arco")
+    services.items.create("Arco", "weapons")
     janela.open_page("Registrar incursão")
     registro = janela.pages["Registrar incursão"]
     registro.form.dungeon_combo.setCurrentIndex(0)
@@ -220,7 +220,7 @@ def test_pagina_de_itens_filtra_por_categoria(qapp, services):
     services.items.create("Espada", category="weapons")
     services.items.create("Machado", category="weapons")
     services.items.create("Poção", category="consumables")
-    services.items.create("Sem tipo")
+    services.items.create("Anel", category="relics")
     page = ItemsPage(services)
     page.refresh()
     assert page.table.rowCount() == 4

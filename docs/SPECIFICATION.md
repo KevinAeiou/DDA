@@ -79,7 +79,7 @@ usuário apenas seleciona a categoria; não há categorias livres.
 | `consumables` | Consumíveis |
 | `precious_bars` | Barras preciosas |
 
-A categoria é opcional no cadastro do item (item sem categoria é permitido).
+A categoria é obrigatória no cadastro do item.
 
 ### Limitações de interpretação
 
@@ -120,7 +120,7 @@ M1--M5.
 ### RF-02 --- Itens
 
 Permitir criar, consultar, editar e inativar: - Nome: obrigatório e
-único. - Categoria: opcional, escolhida entre as oito categorias padrão
+único. - Categoria: obrigatória, escolhida entre as oito categorias padrão
 (seção 3.1). - Descrição: opcional. - Ativo: sim/não.
 
 Itens inativos permanecem associados ao histórico. Não excluir em
@@ -299,7 +299,7 @@ inválida e exige análise específica.
 
 -   `id`: PK.
 -   `name`: texto obrigatório, único.
--   `category`: opcional; um dos códigos da seção 3.1 (restrição CHECK).
+-   `category`: obrigatório; um dos códigos da seção 3.1 (NOT NULL e CHECK).
 -   `description`: opcional.
 -   `is_active`: booleano.
 -   `created_at`, `updated_at`.

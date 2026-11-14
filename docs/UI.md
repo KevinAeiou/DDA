@@ -27,8 +27,7 @@ ficam no diretório de dados descrito em [PERSISTENCE.md](PERSISTENCE.md).
 
 ## Itens e categorias
 
-No cadastro e na edição de item, a categoria é escolhida em uma lista com as oito categorias padrão mais
-"Sem categoria"; não há campo de texto livre. A página de itens exibe o rótulo da categoria e permite filtrar
+No cadastro e na edição de item, a categoria é escolhida em uma lista com as oito categorias padrão, obrigatória e sem seleção inicial; não há campo de texto livre. A página de itens exibe o rótulo da categoria e permite filtrar
 por categoria combinado com o filtro por nome.
 
 ## Registrar incursão

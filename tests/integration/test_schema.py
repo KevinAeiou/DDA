@@ -28,7 +28,7 @@ def test_migracao_gera_esquema_identico_aos_modelos(engine):
 def test_upgrade_e_idempotente_e_downgrade_remove_tudo(engine):
     upgrade_database(engine)
     with engine.connect() as conn:
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0002"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0003"
     downgrade_database(engine, "base")
     assert set(inspect(engine).get_table_names()) <= {"alembic_version"}
 
@@ -69,7 +69,7 @@ def test_nao_exclui_masmorra_ou_item_referenciados(factory):
     with factory() as s:
         d, i = (
             Dungeon(name="D", difficulty=1, created_at=AGORA, updated_at=AGORA),
-            Item(name="I", created_at=AGORA, updated_at=AGORA),
+            Item(name="I", category="weapons", created_at=AGORA, updated_at=AGORA),
         )
         s.add(Run(dungeon=d, item=i, completed_at=AGORA, created_at=AGORA, updated_at=AGORA))
         s.commit()
@@ -108,8 +108,8 @@ def test_checks_de_incursao(engine, extra):
         )
         conn.execute(
             text(
-                "INSERT INTO items (name, created_at, updated_at) "
-                "VALUES ('I', '2026-01-01', '2026-01-01')"
+                "INSERT INTO items (name, category, created_at, updated_at) "
+                "VALUES ('I', 'weapons', '2026-01-01', '2026-01-01')"
             )
         )
     with pytest.raises(IntegrityError), engine.begin() as conn:
@@ -129,7 +129,7 @@ def test_utc_datetime_exige_fuso_e_devolve_utc(factory):
     with pytest.raises(ValueError):
         UTCDateTime().process_bind_param(datetime(2026, 1, 1), None)
     with factory() as s:
-        s.add(Item(name="I", created_at=AGORA, updated_at=AGORA))
+        s.add(Item(name="I", category="weapons", created_at=AGORA, updated_at=AGORA))
         s.commit()
     with factory() as s:
         item = s.query(Item).one()
@@ -143,7 +143,7 @@ def test_persistencia_apos_reabrir_o_banco(tmp_path):
     from sqlalchemy.orm import Session
 
     with Session(engine) as s:
-        s.add(Item(name="Persistente", created_at=AGORA, updated_at=AGORA))
+        s.add(Item(name="Persistente", category="weapons", created_at=AGORA, updated_at=AGORA))
         s.commit()
     engine.dispose()
 
@@ -162,6 +162,13 @@ def test_check_de_categoria_no_banco(engine):
                 "VALUES ('X', 'invalida', '2026-01-01', '2026-01-01')"
             )
         )
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO items (name, created_at, updated_at) "
+                "VALUES ('Sem', '2026-01-01', '2026-01-01')"
+            )
+        )
     with engine.begin() as conn:
         conn.execute(
             text(
@@ -171,9 +178,7 @@ def test_check_de_categoria_no_banco(engine):
         )
 
 
-def test_migracao_0002_converte_categorias_existentes_e_preserva_dados(tmp_path):
-    engine = create_db_engine(tmp_path / "legado.db")
-    upgrade_database(engine, "0001")
+def _inserir_legado(engine):
     dados = [("Espada", "Armas"), ("Anel", " acessórios "), ("Estranho", "raro"), ("Livre", None)]
     with engine.begin() as conn:
         conn.execute(
@@ -197,16 +202,34 @@ def test_migracao_0002_converte_categorias_existentes_e_preserva_dados(tmp_path)
             )
         )
 
+
+def test_migracoes_0002_e_0003_sobre_dados_existentes(tmp_path):
+    engine = create_db_engine(tmp_path / "legado.db")
+    upgrade_database(engine, "0001")
+    _inserir_legado(engine)
+
+    upgrade_database(engine, "0002")
+    with engine.connect() as conn:
+        categorias = dict(conn.execute(text("SELECT name, category FROM items")).all())
+    assert categorias == {
+        "Espada": "weapons",
+        "Anel": "accessories",
+        "Estranho": None,
+        "Livre": None,
+    }
+
+    with pytest.raises(RuntimeError, match="Estranho, Livre"):
+        upgrade_database(engine)
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0002"
+        assert conn.execute(text("SELECT count(*) FROM items")).scalar() == 4
+        assert conn.execute(text("PRAGMA foreign_keys")).scalar() == 1
+
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE items SET category = 'relics' WHERE category IS NULL"))
     upgrade_database(engine)
 
     with engine.connect() as conn:
-        categorias = dict(conn.execute(text("SELECT name, category FROM items")).all())
-        assert categorias == {
-            "Espada": "weapons",
-            "Anel": "accessories",
-            "Estranho": None,
-            "Livre": None,
-        }
         assert conn.execute(text("SELECT count(*) FROM runs")).scalar() == 1
         assert conn.execute(text("PRAGMA foreign_keys")).scalar() == 1
         assert conn.execute(text("PRAGMA foreign_key_check")).all() == []
@@ -216,19 +239,19 @@ def test_migracao_0002_converte_categorias_existentes_e_preserva_dados(tmp_path)
     with pytest.raises(IntegrityError), engine.begin() as conn:
         conn.execute(
             text(
-                "INSERT INTO items (name, created_at, updated_at) "
-                "VALUES ('espada', '2026-01-01', '2026-01-01')"
+                "INSERT INTO items (name, category, created_at, updated_at) "
+                "VALUES ('espada', 'weapons', '2026-01-01', '2026-01-01')"
             )
         )
     with pytest.raises(IntegrityError), engine.begin() as conn:
         conn.execute(text("DELETE FROM items WHERE name = 'Espada'"))
 
-    downgrade_database(engine, "0001")
+    downgrade_database(engine, "0002")
     with engine.begin() as conn:
         conn.execute(
             text(
-                "INSERT INTO items (name, category, created_at, updated_at) "
-                "VALUES ('Livre 2', 'qualquer', '2026-01-01', '2026-01-01')"
+                "INSERT INTO items (name, created_at, updated_at) "
+                "VALUES ('Sem categoria', '2026-01-01', '2026-01-01')"
             )
         )
     engine.dispose()
