@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+from dungeon_drop_analyzer.models import ItemCategory
 from dungeon_drop_analyzer.services import DuplicateError, NotFoundError, ValidationError
 
 
@@ -56,8 +57,10 @@ def test_edita_e_inativa_masmorra(dungeons):
 
 
 def test_item_categoria_e_inativacao(items):
-    i = items.create("Anel", category=" raro ")
-    assert i.category == "raro"
+    i = items.create("Anel", category=" accessories ")
+    assert i.category == "accessories"
+    assert items.update(i.id, category=ItemCategory.RELICS).category == "relics"
+    assert items.update(i.id, category="").category is None
     assert items.update(i.id, category=None).category is None
     items.set_active(i.id, False)
     assert items.get(i.id).is_active is False
@@ -90,3 +93,28 @@ def test_auditoria_de_criacao_e_atualizacao(dungeons, audit_trail):
 def test_atualizacao_sem_mudanca_nao_altera_updated_at(dungeons):
     d = dungeons.create("A", 1)
     assert dungeons.update(d.id, name="A").updated_at == d.updated_at
+
+
+def test_todas_as_categorias_padrao_sao_aceitas(items):
+    criados = [items.create(f"Item {c.value}", category=c) for c in ItemCategory]
+    assert [i.category for i in criados] == [c.value for c in ItemCategory]
+    assert [c.label for c in ItemCategory] == [
+        "Armas",
+        "Armaduras",
+        "Acessórios",
+        "Relíquias",
+        "Recursos de amplificação",
+        "Recursos de artesanato",
+        "Consumíveis",
+        "Barras preciosas",
+    ]
+
+
+@pytest.mark.parametrize("categoria", ["raro", "Armas", 3, ["weapons"]])
+def test_categoria_fora_do_padrao_e_rejeitada(items, categoria):
+    with pytest.raises(ValidationError, match="Categoria inválida"):
+        items.create("X", category=categoria)
+    existente = items.create("Y")
+    with pytest.raises(ValidationError):
+        items.update(existente.id, category=categoria)
+    assert items.get(existente.id).category is None

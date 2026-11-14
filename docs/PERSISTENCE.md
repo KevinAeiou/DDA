@@ -22,7 +22,11 @@ convertidas. A exibição em formato local fica para a interface.
 - Migração `0001` cria `dungeons`, `items`, `runs` e `audit_log`. Os scripts ficam em
   `src/dungeon_drop_analyzer/migrations/` (dentro do pacote, para o empacotamento) e são executados
   programaticamente por `upgrade_database`/`downgrade_database`.
-- Um teste garante que o esquema migrado é idêntico ao definido nos modelos.
+- Migração `0002`: categorias padrão de itens (ver abaixo). Como o SQLite não adiciona constraints a tabelas
+  existentes, ela recria `items`; por isso `upgrade_database`/`downgrade_database` desligam as foreign keys
+  durante a migração, executam `PRAGMA foreign_key_check` ao final (falhando se houver violação) e religam.
+- Um teste garante que o esquema migrado é idêntico ao definido nos modelos, inclusive após a `0002` aplicada
+  sobre dados existentes.
 - Constraints têm nomes determinísticos (convenção de nomes no `MetaData`).
 - `runs.dungeon_id` e `runs.item_id` usam `ON DELETE RESTRICT`; masmorras e itens nunca são excluídos, apenas
   inativados. Índices em `runs.completed_at`, `runs.dungeon_id`, `runs.item_id`.
@@ -30,6 +34,18 @@ convertidas. A exibição em formato local fica para a interface.
   cobre letras ASCII; acentos diferentes contam como nomes distintos).
 - Dificuldade (1–5), duração (≥ 0) e os estados `yes`/`no`/`unknown` são validados no banco e nos serviços.
 - A dificuldade não é única por masmorra, pois a confirmação dos níveis 1–5 é uma decisão em aberto.
+
+## Categorias de itens
+
+Conjunto fixo de oito categorias (armas, armaduras, acessórios, relíquias, recursos de amplificação, recursos de artesanato, consumíveis e barras preciosas), definido por `ItemCategory` em `models/entities.py`, com o
+rótulo em português em `ItemCategory.label`. O banco guarda o código (`weapons`, `armor`, `accessories`,
+`relics`, `amplification_resources`, `crafting_resources`, `consumables`, `precious_bars`) e uma restrição
+CHECK impede qualquer outro valor. A categoria é opcional (`NULL` = sem categoria).
+
+`ItemService` aceita o enum ou o código (texto vazio vira sem categoria) e rejeita qualquer outro valor com
+`ValidationError`. Na migração `0002`, categorias de texto livre existentes são convertidas quando coincidem
+com um rótulo padrão (sem diferenciar maiúsculas, plural/singular ou acentuação nos casos previstos); as
+demais viram sem categoria. Não havia dados reais antes desta mudança.
 
 ## Camadas
 

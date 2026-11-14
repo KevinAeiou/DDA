@@ -6,6 +6,8 @@ from datetime import datetime
 
 from PySide6.QtCore import QDateTime
 
+from dungeon_drop_analyzer.models import CATEGORY_LABELS, ItemCategory
+
 TRISTATE_LABELS = {"yes": "Sim", "no": "Não", "unknown": "Desconhecido"}
 DATETIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 QT_DATETIME_FORMAT = "dd/MM/yyyy HH:mm:ss"
@@ -31,6 +33,15 @@ def format_duration(seconds: int | None) -> str:
 
 def format_tristate(value: str) -> str:
     return TRISTATE_LABELS.get(value, value)
+
+
+def format_category(value: str | None) -> str:
+    if not value:
+        return ""
+    try:
+        return CATEGORY_LABELS[ItemCategory(value)]
+    except ValueError:
+        return value
 
 
 def format_bool(value: bool) -> str:

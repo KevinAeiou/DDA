@@ -51,7 +51,8 @@ oferecem melhores recompensas: isso é uma hipótese a investigar.
 1.  Existem cinco masmorras com dificuldades ordenadas.
 2.  O jogador realiza as incursões sozinho.
 3.  Cada incursão concluída gera exatamente um item.
-4.  A lista de itens possíveis é conhecida.
+4.  A lista de itens possíveis é conhecida e cada item pertence a uma das
+    oito categorias padrão (seção 3.1).
 5.  A seleção do item é manual.
 6.  Todos os itens serão analisados individualmente.
 7.  Cada incursão concluída é uma unidade de observação.
@@ -61,6 +62,24 @@ oferecem melhores recompensas: isso é uma hipótese a investigar.
 **Resultado:** item recebido.\
 **Variáveis auxiliares:** data/hora, duração, versão do jogo, bônus,
 evento e observações.
+
+### 3.1 Categorias padrão de itens
+
+Qualquer masmorra pode fornecer itens de qualquer uma das categorias abaixo. O
+usuário apenas seleciona a categoria; não há categorias livres.
+
+| Código | Categoria |
+|---|---|
+| `weapons` | Armas |
+| `armor` | Armaduras |
+| `accessories` | Acessórios |
+| `relics` | Relíquias |
+| `amplification_resources` | Recursos de amplificação |
+| `crafting_resources` | Recursos de artesanato |
+| `consumables` | Consumíveis |
+| `precious_bars` | Barras preciosas |
+
+A categoria é opcional no cadastro do item (item sem categoria é permitido).
 
 ### Limitações de interpretação
 
@@ -101,7 +120,8 @@ M1--M5.
 ### RF-02 --- Itens
 
 Permitir criar, consultar, editar e inativar: - Nome: obrigatório e
-único. - Categoria: opcional. - Descrição: opcional. - Ativo: sim/não.
+único. - Categoria: opcional, escolhida entre as oito categorias padrão
+(seção 3.1). - Descrição: opcional. - Ativo: sim/não.
 
 Itens inativos permanecem associados ao histórico. Não excluir em
 cascata itens já utilizados.
@@ -279,7 +299,8 @@ inválida e exige análise específica.
 
 -   `id`: PK.
 -   `name`: texto obrigatório, único.
--   `category`, `description`: opcionais.
+-   `category`: opcional; um dos códigos da seção 3.1 (restrição CHECK).
+-   `description`: opcional.
 -   `is_active`: booleano.
 -   `created_at`, `updated_at`.
 
@@ -436,7 +457,7 @@ masmorras, além de oferecer visão global da distribuição.
 
 -   Nomes reais das cinco masmorras.
 -   Confirmação de níveis exatamente 1--5.
--   Lista completa de itens e categorias.
+-   Lista completa de itens (as categorias já estão definidas na seção 3.1).
 -   Se bônus/eventos alteram o drop.
 -   Existência de pity system.
 -   Versão mínima do Windows.

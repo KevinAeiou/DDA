@@ -11,13 +11,18 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from dungeon_drop_analyzer.core.database import session_scope
 from dungeon_drop_analyzer.core.timeutils import utc_now
-from dungeon_drop_analyzer.models import AuditAction, Dungeon, Item
-from dungeon_drop_analyzer.models.entities import NAME_LENGTH
+from dungeon_drop_analyzer.models import AuditAction, Dungeon, Item, ItemCategory
 from dungeon_drop_analyzer.repositories import DungeonRepository, ItemRepository
 
 from . import audit
 from .errors import DuplicateError, NotFoundError, ValidationError
-from .validators import clean_name, clean_optional_text, validate_bool, validate_difficulty
+from .validators import (
+    clean_name,
+    clean_optional_text,
+    validate_bool,
+    validate_category,
+    validate_difficulty,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +152,7 @@ class ItemService(_CatalogService):
     repo_cls = ItemRepository
     validators = {
         "name": lambda v: clean_name(v, "Nome do item"),
-        "category": lambda v: clean_optional_text(v, "Categoria", NAME_LENGTH),
+        "category": validate_category,
         "description": lambda v: clean_optional_text(v, "Descrição"),
         "is_active": lambda v: validate_bool(v, "Ativo"),
     }
@@ -155,7 +160,7 @@ class ItemService(_CatalogService):
     def create(
         self,
         name: str,
-        category: str | None = None,
+        category: ItemCategory | str | None = None,
         description: str | None = None,
         is_active: bool = True,
     ) -> Item:

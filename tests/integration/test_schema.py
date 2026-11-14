@@ -28,7 +28,7 @@ def test_migracao_gera_esquema_identico_aos_modelos(engine):
 def test_upgrade_e_idempotente_e_downgrade_remove_tudo(engine):
     upgrade_database(engine)
     with engine.connect() as conn:
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0001"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0002"
     downgrade_database(engine, "base")
     assert set(inspect(engine).get_table_names()) <= {"alembic_version"}
 
@@ -152,3 +152,83 @@ def test_persistencia_apos_reabrir_o_banco(tmp_path):
     with Session(reaberto) as s:
         assert [i.name for i in s.query(Item)] == ["Persistente"]
     reaberto.dispose()
+
+
+def test_check_de_categoria_no_banco(engine):
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO items (name, category, created_at, updated_at) "
+                "VALUES ('X', 'invalida', '2026-01-01', '2026-01-01')"
+            )
+        )
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO items (name, category, created_at, updated_at) "
+                "VALUES ('Y', 'weapons', '2026-01-01', '2026-01-01')"
+            )
+        )
+
+
+def test_migracao_0002_converte_categorias_existentes_e_preserva_dados(tmp_path):
+    engine = create_db_engine(tmp_path / "legado.db")
+    upgrade_database(engine, "0001")
+    dados = [("Espada", "Armas"), ("Anel", " acessórios "), ("Estranho", "raro"), ("Livre", None)]
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO dungeons (name, difficulty, created_at, updated_at) "
+                "VALUES ('D', 1, '2026-01-01', '2026-01-01')"
+            )
+        )
+        for nome, categoria in dados:
+            conn.execute(
+                text(
+                    "INSERT INTO items (name, category, created_at, updated_at) "
+                    "VALUES (:n, :c, '2026-01-01', '2026-01-01')"
+                ),
+                {"n": nome, "c": categoria},
+            )
+        conn.execute(
+            text(
+                "INSERT INTO runs (dungeon_id, item_id, completed_at, created_at, updated_at) "
+                "VALUES (1, 1, '2026-01-01', '2026-01-01', '2026-01-01')"
+            )
+        )
+
+    upgrade_database(engine)
+
+    with engine.connect() as conn:
+        categorias = dict(conn.execute(text("SELECT name, category FROM items")).all())
+        assert categorias == {
+            "Espada": "weapons",
+            "Anel": "accessories",
+            "Estranho": None,
+            "Livre": None,
+        }
+        assert conn.execute(text("SELECT count(*) FROM runs")).scalar() == 1
+        assert conn.execute(text("PRAGMA foreign_keys")).scalar() == 1
+        assert conn.execute(text("PRAGMA foreign_key_check")).all() == []
+        diff = compare_metadata(MigrationContext.configure(conn), Base.metadata)
+    assert diff == []
+
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO items (name, created_at, updated_at) "
+                "VALUES ('espada', '2026-01-01', '2026-01-01')"
+            )
+        )
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(text("DELETE FROM items WHERE name = 'Espada'"))
+
+    downgrade_database(engine, "0001")
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO items (name, category, created_at, updated_at) "
+                "VALUES ('Livre 2', 'qualquer', '2026-01-01', '2026-01-01')"
+            )
+        )
+    engine.dispose()

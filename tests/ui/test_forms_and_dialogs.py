@@ -87,10 +87,10 @@ def test_dialogo_de_item_nome_vazio_gera_aviso(qapp, services, dialogs):
     dialog.accept()
     assert dialogs.errors and "obrigatório" in dialogs.errors[-1]
     dialog.name.setText("Anel")
-    dialog.category.setText("acessório")
+    dialog.category.setCurrentIndex(dialog.category.findData("accessories"))
     dialog.accept()
     item = services.items.list()[0]
-    assert (item.name, item.category) == ("Anel", "acessório")
+    assert (item.name, item.category) == ("Anel", "accessories")
 
 
 def test_dialogo_de_correcao_altera_item_e_ignora_data_intocada(qapp, services, seeded):
@@ -116,3 +116,31 @@ def test_dialogo_de_correcao_mantem_item_inativo_do_registro(qapp, services, see
     dialog.form.notes.setPlainText("ajuste")
     dialog.accept()
     assert services.runs.get(run.id).notes == "ajuste"
+
+
+def test_dialogo_de_item_lista_as_oito_categorias_e_permite_sem_categoria(qapp, services):
+    dialog = ItemDialog(services.items)
+    rotulos = [dialog.category.itemText(i) for i in range(dialog.category.count())]
+    assert rotulos == [
+        "Sem categoria",
+        "Armas",
+        "Armaduras",
+        "Acessórios",
+        "Relíquias",
+        "Recursos de amplificação",
+        "Recursos de artesanato",
+        "Consumíveis",
+        "Barras preciosas",
+    ]
+    dialog.name.setText("Poção")
+    dialog.accept()
+    assert services.items.list()[0].category is None
+
+
+def test_dialogo_de_item_edita_categoria(qapp, services):
+    item = services.items.create("Barra", category="crafting_resources")
+    dialog = ItemDialog(services.items, item)
+    assert dialog.category.currentData() == "crafting_resources"
+    dialog.category.setCurrentIndex(dialog.category.findData("precious_bars"))
+    dialog.accept()
+    assert services.items.get(item.id).category == "precious_bars"
