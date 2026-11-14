@@ -1,0 +1,58 @@
+# Persistência e domínio
+
+Complementa as seções 5, 8 e 11 de [SPECIFICATION.md](SPECIFICATION.md).
+
+## Armazenamento
+
+- Banco SQLite em `dda.db` dentro do diretório de dados do usuário: `%LOCALAPPDATA%\DungeonDropAnalyzer` no
+  Windows (ou `~/.local/share/DungeonDropAnalyzer` sem `LOCALAPPDATA`). A variável `DDA_DATA_DIR` ou o argumento
+  de `Settings.load(data_dir)` sobrescrevem o caminho. Logs ficam em `logs/` e backups, no futuro, em `backups/`.
+- A escolha do diretório pelo usuário na interface (e sua persistência) fica para as Fases 3 e 5.
+- `initialize(settings)` cria os diretórios, configura o log rotativo (1 MB × 5 arquivos), abre o banco com
+  `PRAGMA foreign_keys=ON` em toda conexão e aplica as migrações até `head`.
+
+## Datas
+
+Todas as datas são gravadas em UTC (coluna sem fuso) e devolvidas com fuso UTC. O tipo `UTCDateTime` recusa
+`datetime` sem fuso. Na camada de serviços, datas sem fuso são interpretadas como horário local da máquina e
+convertidas. A exibição em formato local fica para a interface.
+
+## Esquema e migrações
+
+- Migração `0001` cria `dungeons`, `items`, `runs` e `audit_log`. Os scripts ficam em
+  `src/dungeon_drop_analyzer/migrations/` (dentro do pacote, para o empacotamento) e são executados
+  programaticamente por `upgrade_database`/`downgrade_database`.
+- Um teste garante que o esquema migrado é idêntico ao definido nos modelos.
+- Constraints têm nomes determinísticos (convenção de nomes no `MetaData`).
+- `runs.dungeon_id` e `runs.item_id` usam `ON DELETE RESTRICT`; masmorras e itens nunca são excluídos, apenas
+  inativados. Índices em `runs.completed_at`, `runs.dungeon_id`, `runs.item_id`.
+- Nomes de masmorras e itens são únicos sem diferenciar maiúsculas de minúsculas (`COLLATE NOCASE`, que só
+  cobre letras ASCII; acentos diferentes contam como nomes distintos).
+- Dificuldade (1–5), duração (≥ 0) e os estados `yes`/`no`/`unknown` são validados no banco e nos serviços.
+- A dificuldade não é única por masmorra, pois a confirmação dos níveis 1–5 é uma decisão em aberto.
+
+## Camadas
+
+- `repositories`: consultas e persistência a partir de uma `Session`; nunca confirmam transação.
+- `services`: casos de uso; cada operação roda em uma transação (`session_scope`) que confirma ou desfaz tudo,
+  incluindo a auditoria. Erros de domínio (`ValidationError`, `NotFoundError`, `DuplicateError`) têm mensagens
+  em português para a interface.
+
+## Regras de negócio
+
+- Uma incursão tem exatamente um item (um único `item_id` inteiro; listas são rejeitadas).
+- Novas incursões só aceitam masmorras e itens ativos. Itens inativados continuam no histórico e podem permanecer
+  em incursões editadas, mas não podem ser selecionados em uma correção.
+- Data/hora da conclusão é opcional na chamada e assume o instante atual.
+
+## Histórico e filtros
+
+`RunFilter` combina (E lógico): período (inclusivo), masmorras, itens, dificuldades, bônus, evento e versão do
+jogo. A listagem é da incursão mais recente para a mais antiga por padrão (`descending=False` inverte) e aceita
+`limit`/`offset`. Uma lista vazia em um filtro (por exemplo `dungeon_ids=[]`) resulta em nenhuma incursão.
+
+## Auditoria
+
+`audit_log` registra criação, atualização e exclusão de masmorras, itens e incursões, na mesma transação da
+alteração, com `old_data`/`new_data` em JSON. Atualizações sem mudança real não geram registro nem alteram
+`updated_at`. `AuditTrailService.history(tipo, id)` lista a trilha de uma entidade.

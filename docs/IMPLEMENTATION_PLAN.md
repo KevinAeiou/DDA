@@ -40,7 +40,7 @@ Primeiro por ser o maior risco técnico e independente de UI/banco (RF-06, RF-07
 **Saída (critérios 6–9):** testes contra valores de referência (SciPy/statsmodels e cálculos manuais), fixtures
 sintéticas identificadas, nenhuma dependência de UI ou banco.
 
-## Fase 2 — Persistência e domínio ☐
+## Fase 2 — Persistência e domínio ☑
 
 - Modelos ORM: `dungeons`, `items`, `runs`, `audit_log` (seção 8).
 - Alembic com migração inicial; SQLite com foreign keys habilitadas; índices em `completed_at`, `dungeon_id`,
@@ -48,6 +48,8 @@ sintéticas identificadas, nenhuma dependência de UI ou banco.
 - Repositórios e serviços: CRUD de masmorras/itens (inativação), registro de incursão em transação, histórico
   com filtros, edição/exclusão com auditoria.
 - Banco no diretório de dados do usuário (caminho configurável), logging rotativo.
+
+Decisões e convenções: [PERSISTENCE.md](PERSISTENCE.md).
 
 **Saída (critérios 2–5):** testes de integração com SQLite temporário; persistência após reabertura; filtros
 corretos; validações (1 item por incursão, duração ≥ 0, dificuldade 1–5, nomes únicos).
