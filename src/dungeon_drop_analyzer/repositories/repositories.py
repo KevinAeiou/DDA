@@ -127,6 +127,19 @@ class RunRepository:
             stmt = stmt.limit(limit)
         return list(self.session.scalars(stmt).unique())
 
+    def count_matrix(self, flt: RunFilter | None = None) -> list[tuple[int, int, int]]:
+        stmt = self._apply(
+            select(Run.dungeon_id, Run.item_id, func.count(Run.id)).group_by(
+                Run.dungeon_id, Run.item_id
+            ),
+            flt,
+        )
+        return [(d, i, int(c)) for d, i, c in self.session.execute(stmt)]
+
+    def timeline(self, flt: RunFilter | None = None) -> list[tuple[datetime, int]]:
+        stmt = self._apply(select(Run.completed_at, Run.dungeon_id), flt)
+        return [(when, dungeon_id) for when, dungeon_id in self.session.execute(stmt)]
+
     def distinct_game_versions(self) -> list[str]:
         stmt = (
             select(Run.game_version)

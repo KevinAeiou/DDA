@@ -6,7 +6,7 @@ import itertools
 from dataclasses import dataclass, field
 
 import numpy as np
-from scipy.stats import chi2, chi2_contingency, fisher_exact
+from scipy.stats import chi2, chi2_contingency, fisher_exact, random_table
 
 from .multiplicity import holm_adjust
 
@@ -55,20 +55,15 @@ def _chi2_stat(table: np.ndarray, expected: np.ndarray) -> float:
 
 
 def _monte_carlo(table: np.ndarray, n_sim: int, seed: int) -> tuple[float, float]:
-    """Teste de permutação (marginais fixas) com estatística qui-quadrado."""
-    rows, cols = table.shape
+    """Teste de permutação (marginais fixas, tabelas de Patefield) com estatística qui-quadrado."""
     expected = expected_counts(table)
     observed = _chi2_stat(table, expected)
-    row_labels = np.repeat(np.arange(rows), table.sum(axis=1))
-    col_labels = np.repeat(np.tile(np.arange(cols), rows), table.ravel())
     rng = np.random.default_rng(seed)
-    extreme = 0
+    sampler = random_table(table.sum(axis=1), table.sum(axis=0), seed=rng)
+    sims = sampler.rvs(size=n_sim)
+    stats = ((sims - expected) ** 2 / expected).sum(axis=(1, 2))
     tol = 1e-9 * max(1.0, observed)
-    for _ in range(n_sim):
-        perm = rng.permutation(col_labels)
-        sim = np.bincount(row_labels * cols + perm, minlength=rows * cols).reshape(rows, cols)
-        if _chi2_stat(sim, expected) >= observed - tol:
-            extreme += 1
+    extreme = int((stats >= observed - tol).sum())
     return observed, (extreme + 1) / (n_sim + 1)
 
 

@@ -111,24 +111,24 @@ def test_historico_lista_em_ordem_e_filtra(qapp, services, seeded, dialogs):
     assert cell(page, 0, 0).startswith("04/03/2026") and cell(page, 3, 0).startswith("01/03/2026")
     assert cell(page, 0, 2) == "5" and cell(page, 0, 6) == "Não"
 
-    page.dungeon_combo.setCurrentIndex(page.dungeon_combo.findText("Masmorra 1"))
+    page.filters.dungeon_combo.setCurrentIndex(page.filters.dungeon_combo.findText("Masmorra 1"))
     page.apply_filters()
     assert page.table.rowCount() == 2
     page.clear_filters()
     assert page.table.rowCount() == 4
 
-    page.item_combo.setCurrentIndex(page.item_combo.findText("Espada"))
-    page.bonus_combo.setCurrentIndex(page.bonus_combo.findData("no"))
+    page.filters.item_combo.setCurrentIndex(page.filters.item_combo.findText("Espada"))
+    page.filters.bonus_combo.setCurrentIndex(page.filters.bonus_combo.findData("no"))
     page.apply_filters()
     assert page.table.rowCount() == 1 and cell(page, 0, 1) == "Masmorra 2"
 
     page.clear_filters()
-    page.difficulty_combo.setCurrentIndex(page.difficulty_combo.findData(5))
+    page.filters.difficulty_combo.setCurrentIndex(page.filters.difficulty_combo.findData(5))
     page.apply_filters()
     assert page.table.rowCount() == 1 and cell(page, 0, 3) == "Anel"
 
     page.clear_filters()
-    page.version_combo.setCurrentIndex(page.version_combo.findData("1.1"))
+    page.filters.version_combo.setCurrentIndex(page.filters.version_combo.findData("1.1"))
     page.apply_filters()
     assert page.table.rowCount() == 1
     assert "1–1 de 1" in page.summary.text()
@@ -138,14 +138,14 @@ def test_historico_filtro_de_periodo_e_validacao(qapp, services, seeded, dialogs
     registrar(services, seeded)
     page = HistoryPage(services)
     page.refresh()
-    page.use_from.setChecked(True)
-    page.date_from.setDateTime(QDateTime(2026, 3, 2, 0, 0, 0))
-    page.use_to.setChecked(True)
-    page.date_to.setDateTime(QDateTime(2026, 3, 3, 23, 59, 59))
+    page.filters.use_from.setChecked(True)
+    page.filters.date_from.setDateTime(QDateTime(2026, 3, 2, 0, 0, 0))
+    page.filters.use_to.setChecked(True)
+    page.filters.date_to.setDateTime(QDateTime(2026, 3, 3, 23, 59, 59))
     page.apply_filters()
     assert page.table.rowCount() == 2
 
-    page.date_from.setDateTime(QDateTime(2026, 4, 1, 0, 0, 0))
+    page.filters.date_from.setDateTime(QDateTime(2026, 4, 1, 0, 0, 0))
     page.apply_filters()
     assert "anterior" in dialogs.errors[-1]
 

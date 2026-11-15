@@ -52,3 +52,11 @@ def selected_id(table: QTableWidget) -> int | None:
     if not rows:
         return None
     return table.item(rows[0].row(), 0).data(Qt.ItemDataRole.UserRole)
+
+
+def fit_table_height(table: QTableWidget, max_rows: int = 12) -> None:
+    """Ajusta a altura da tabela ao número de linhas (limitada), para uso em áreas roláveis."""
+    rows = min(table.rowCount(), max_rows)
+    height = table.horizontalHeader().height() + 2 * table.frameWidth() + 4
+    height += sum(table.rowHeight(r) for r in range(rows)) if rows else 24
+    table.setFixedHeight(height)

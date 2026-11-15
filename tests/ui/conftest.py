@@ -1,6 +1,8 @@
 """Fixtures de UI: Qt em modo offscreen, banco temporário e caixas de mensagem interceptadas."""
 
+import importlib
 import os
+import sys
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -13,9 +15,6 @@ from dungeon_drop_analyzer.core.database import (
     upgrade_database,
 )
 from dungeon_drop_analyzer.services import Services
-from dungeon_drop_analyzer.ui.dialogs import form_dialog
-from dungeon_drop_analyzer.ui.pages import catalog_pages, history_page, register_page
-from dungeon_drop_analyzer.ui.widgets import messages
 
 
 @pytest.fixture(scope="session")
@@ -55,6 +54,8 @@ class Dialogs:
 
 @pytest.fixture
 def dialogs(monkeypatch, qapp):
+    """Intercepta avisos e confirmações em todos os módulos da interface."""
+    importlib.import_module("dungeon_drop_analyzer.ui.windows")
     state = Dialogs()
 
     def fake_error(parent, text):
@@ -64,12 +65,13 @@ def dialogs(monkeypatch, qapp):
         state.confirmations.append(text)
         return state.confirm_answer
 
-    for module in (messages, form_dialog, catalog_pages, history_page, register_page):
+    for name, module in list(sys.modules.items()):
+        if not name.startswith("dungeon_drop_analyzer.ui") or module is None:
+            continue
         if hasattr(module, "show_error"):
             monkeypatch.setattr(module, "show_error", fake_error)
         if hasattr(module, "confirm"):
             monkeypatch.setattr(module, "confirm", fake_confirm)
-    monkeypatch.setattr(messages, "show_error", fake_error)
     return state
 
 
