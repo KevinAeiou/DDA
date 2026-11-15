@@ -8,6 +8,7 @@ estima frequências, proporções com intervalo de Wilson de 95%, testes globais
 e **não presume** que masmorras mais difíceis dão melhores recompensas — isso é uma hipótese a investigar.
 
 > Status: **Fases 0 a 3 concluídas** (fundação, núcleo estatístico, persistência/domínio e interface de coleta). Dashboard, análise na interface e exportação ainda não existem.
+> Status: **Fases 0 a 3 concluídas** (fundação, núcleo estatístico, persistência/domínio e interface de coleta). Dashboard, análise na interface e exportação ainda não existem.
 
 ## Documentação
 
@@ -52,6 +53,7 @@ Para reproduzir exatamente as versões validadas: `pip install -r requirements-l
 ## Comandos úteis
 
 ```bash
+python -m dungeon_drop_analyzer   # abre a aplicação
 python -m dungeon_drop_analyzer   # abre a aplicação
 pytest            # testes
 ruff check .      # lint
