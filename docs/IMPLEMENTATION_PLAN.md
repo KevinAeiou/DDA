@@ -35,7 +35,7 @@ Primeiro por ser o maior risco técnico e independente de UI/banco (RF-06, RF-07
 - Holm aplicado em duas famílias distintas: pareadas dentro de cada item, e testes globais entre itens.
 - Zeros: razão indefinida vira `None` com nota; odds ratio usa Haldane-Anscombe (+0,5) com aviso.
 - Limite piloto de 50 incursões/masmorra é apenas sinalização, configurável (`min_n`).
-- Tendência ordinal por dificuldade (RF-08) fica para a Fase 4.
+- Tendência ordinal por dificuldade (RF-08): implementada na Fase 4 (`trend_test`).
 
 **Saída (critérios 6–9):** testes contra valores de referência (SciPy/statsmodels e cálculos manuais), fixtures
 sintéticas identificadas, nenhuma dependência de UI ou banco.
@@ -64,13 +64,17 @@ Decisões e convenções: [UI.md](UI.md).
 
 **Saída:** fluxo completo de cadastro → registro → histórico, com feedback de sucesso/erro.
 
-## Fase 4 — Dashboard e análise estatística na UI ☐
+## Fase 4 — Dashboard e análise estatística na UI ☑
 
 - Dashboard (RF-05): totais, distribuição, mais/menos frequentes com empates, evolução temporal, tamanho da
   amostra, respeito a filtros.
 - Análise individual de item e visão global (RF-06/07), dificuldade/tendência ordinal exploratória (RF-08).
 - Avisos de limitação: confusão masmorra×dificuldade, hipótese de independência, "não foi detectada diferença
   estatisticamente significativa".
+
+Decisões e convenções: [STATISTICS.md](STATISTICS.md) (serviço de análise e tendência) e [UI.md](UI.md).
+Matplotlib foi escolhido para os gráficos (já previsto na especificação). O Monte Carlo passou a usar tabelas de
+Patefield vetorizadas para que a análise por item na interface seja instantânea.
 
 **Saída (critérios 8, 10 na UI):** resultados da UI conferem com o núcleo estatístico.
 

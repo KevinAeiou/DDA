@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from dungeon_drop_analyzer.core.timeutils import utc_now
 
+from .analytics import AnalyticsService
 from .audit import AuditTrailService
 from .catalog import Clock, DungeonService, ItemService
 from .runs import RunService
@@ -19,6 +20,7 @@ class Services:
     items: ItemService
     runs: RunService
     audit: AuditTrailService
+    analytics: AnalyticsService
 
     @classmethod
     def create(cls, session_factory: sessionmaker[Session], clock: Clock = utc_now) -> Services:
@@ -27,4 +29,5 @@ class Services:
             items=ItemService(session_factory, clock),
             runs=RunService(session_factory, clock),
             audit=AuditTrailService(session_factory),
+            analytics=AnalyticsService(session_factory),
         )

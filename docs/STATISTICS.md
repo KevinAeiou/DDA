@@ -29,7 +29,8 @@ masmorra (`n_d`) é a soma da linha, ou seja, inclui incursões que resultaram e
 
 - Linhas (masmorras sem incursões) e colunas (itens nunca obtidos) totalmente nulas são removidas antes do teste.
 - Método `auto`: qui-quadrado se esperadas mínimas ≥ 1 e no máximo 20% das células com esperada < 5 (Cochran);
-  caso contrário, Monte Carlo por permutação com marginais fixas.
+  caso contrário, Monte Carlo com marginais fixas (tabelas aleatórias de Patefield, `scipy.stats.random_table`,
+  vetorizado: 10.000 simulações levam milissegundos).
 - Monte Carlo: `p = (extremos + 1) / (n_sim + 1)`; o resultado informa `n_sim` (padrão 10.000) e `seed`
   (padrão 12345).
 - Tabela com menos de 2 linhas ou 2 colunas efetivas devolve método `indefinido` com `p_value = None`.
@@ -40,3 +41,28 @@ masmorra (`n_d`) é a soma da linha, ou seja, inclui incursões que resultaram e
 
 O limite padrão de 50 incursões por masmorra (`DEFAULT_MIN_PER_DUNGEON`) é apenas sinalização de piloto e não
 garante poder estatístico (especificação, seção 7.8). É configurável via `min_n`.
+
+## Tendência por dificuldade (exploratória)
+
+`trend_test(x, n, scores)` implementa o teste de Cochran-Armitage bilateral: `T = Σ s_i (x_i − n_i p̄)` e
+`Var = p̄ (1 − p̄) [Σ n_i s_i² − (Σ n_i s_i)² / N]`, com `z = T / √Var` e `p = 2 · P(Z > |z|)`. Grupos sem
+observações são descartados; é indefinido com menos de dois grupos, escores todos iguais ou item ausente/presente
+em todas as incursões. O teste é validado contra o exemplo clássico de Agresti (Z² ≈ 6,6; p ≈ 0,01) e é invariante
+a mudança de escala dos escores. É apenas exploratório: não indica causalidade, pois masmorra e dificuldade estão
+confundidas.
+
+## Camada de serviço (`AnalyticsService`)
+
+- `dashboard(filtro)`: totais, incursões por masmorra, itens distintos obtidos, distribuição dos itens, mais e
+  menos frequentes (com empates), contagens por categoria e por masmorra × item e a evolução acumulada por dia
+  (data local). Itens inativos só aparecem se tiverem obtenções. O "menos frequente" considera os itens ativos do
+  catálogo e pode ser zero (nunca obtido).
+- `analyze(filtro, min_n, n_sim, seed, alpha)`: usa apenas masmorras com incursões e itens obtidos pelo menos uma
+  vez (as demais linhas e colunas são nulas). Devolve o teste da distribuição completa, a análise de cada item, os
+  níveis de dificuldade (masmorras de mesmo nível são somadas) e a tendência por item com Holm entre itens.
+  Retorna relatório não analisável com menos de duas masmorras com dados.
+- `interpret(p, alpha)`: texto padrão ("Foi detectada diferença estatisticamente significativa..." ou "Não foi
+  detectada diferença estatisticamente significativa. Isso não prova que as distribuições sejam iguais.") e
+  mensagem de teste indefinido. A decisão sobre cada item usa o valor-p ajustado por Holm entre itens.
+- `LIMITATION_NOTES`: confusão masmorra × dificuldade, hipótese de independência e não significância não prova
+  igualdade; exibidas na página de análise.

@@ -7,6 +7,8 @@ from PySide6.QtWidgets import QHBoxLayout, QListWidget, QMainWindow, QStackedWid
 from dungeon_drop_analyzer.core.config import Settings
 from dungeon_drop_analyzer.services import Services
 from dungeon_drop_analyzer.ui.pages import (
+    AnalysisPage,
+    DashboardPage,
     DungeonsPage,
     HistoryPage,
     ItemsPage,
@@ -27,16 +29,12 @@ class MainWindow(QMainWindow):
         self.resize(1100, 700)
 
         self.pages: dict[str, Page] = {
-            "Dashboard": PlaceholderPage(
-                "Dashboard", "Totais, distribuição de itens e evolução temporal chegam na Fase 4."
-            ),
+            "Dashboard": DashboardPage(services),
             "Registrar incursão": RegisterRunPage(services),
             "Histórico": HistoryPage(services),
             "Masmorras": DungeonsPage(services),
             "Itens": ItemsPage(services),
-            "Análise estatística": PlaceholderPage(
-                "Análise estatística", "Comparações entre masmorras chegam na Fase 4."
-            ),
+            "Análise estatística": AnalysisPage(services),
             "Relatórios": PlaceholderPage(
                 "Relatórios", "Exportação em CSV e XLSX chega na Fase 5."
             ),
