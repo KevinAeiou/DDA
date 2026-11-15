@@ -61,3 +61,42 @@ def test_initialize_cria_diretorios_banco_e_persiste(tmp_path):
         if getattr(h, "_dda_handler", False):
             logger.removeHandler(h)
             h.close()
+
+
+def test_diretorio_salvo_na_interface_tem_prioridade_menor_que_a_variavel(monkeypatch, tmp_path):
+    from dungeon_drop_analyzer.core.config import (
+        clear_saved_data_dir,
+        save_data_dir,
+        saved_data_dir,
+        user_config_path,
+    )
+
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "perfil"))
+    monkeypatch.delenv(DATA_DIR_ENV, raising=False)
+    assert saved_data_dir() is None
+    arquivo = save_data_dir(tmp_path / "escolhida")
+    assert arquivo == user_config_path() and saved_data_dir() == tmp_path / "escolhida"
+    assert default_data_dir() == tmp_path / "escolhida"
+    monkeypatch.setenv(DATA_DIR_ENV, str(tmp_path / "ambiente"))
+    assert default_data_dir() == tmp_path / "ambiente"
+    monkeypatch.delenv(DATA_DIR_ENV)
+    clear_saved_data_dir()
+    clear_saved_data_dir()
+    assert default_data_dir() == tmp_path / "perfil" / "DungeonDropAnalyzer"
+
+
+def test_configuracao_salva_invalida_e_ignorada(monkeypatch, tmp_path):
+    from dungeon_drop_analyzer.core.config import saved_data_dir, user_config_path
+
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    caminho = user_config_path()
+    caminho.parent.mkdir(parents=True)
+    for conteudo in ("não é json", "[]", '{"data_dir": ""}', '{"data_dir": 3}'):
+        caminho.write_text(conteudo, encoding="utf-8")
+        assert saved_data_dir() is None
+
+
+def test_pastas_derivadas_do_diretorio_de_dados(tmp_path):
+    settings = Settings.load(tmp_path)
+    assert settings.export_dir == tmp_path / "exports"
+    assert settings.backup_dir == tmp_path / "backups"

@@ -17,8 +17,8 @@ ficam no diretório de dados descrito em [PERSISTENCE.md](PERSISTENCE.md).
   inicializa o banco e abre a janela. Se o banco não abrir, mostra o caminho e encerra.
 - `windows/main_window.py`: menu lateral com as oito entradas da especificação e páginas empilhadas. Cada página
   é recarregada ao ser aberta. Mensagens de sucesso aparecem na barra de status.
-- `pages/`: `RegisterRunPage`, `HistoryPage`, `DungeonsPage`, `ItemsPage`, página de configurações (mostra os
-  caminhos de dados), `DashboardPage`, `AnalysisPage` e marcador para Relatórios (Fase 5).
+- `pages/`: `RegisterRunPage`, `HistoryPage`, `DungeonsPage`, `ItemsPage`, `DashboardPage`, `AnalysisPage`,
+  `ReportsPage` e `SettingsPage` (caminhos de dados, diretório configurável, backup e restauração).
 - `dialogs/`: cadastro/edição de masmorras e itens e correção de incursão. Um diálogo só fecha quando o serviço
   aceita os dados; erros de domínio aparecem como aviso e o formulário permanece aberto.
 - `widgets/`: `FilterPanel` (filtros compartilhados), `charts` (Matplotlib incorporado), `analysis_format`
@@ -55,6 +55,15 @@ Três abas sobre o mesmo relatório, com os filtros da página (sem filtro de it
 
 Sem incursões em ao menos duas masmorras, as abas orientam o usuário em vez de exibir resultados.
 
+## Relatórios e configurações
+
+`ReportsPage` tem os filtros da página e quatro botões (histórico CSV, frequências CSV, resultados estatísticos
+CSV e relatório consolidado XLSX); cada um pede o arquivo de destino (pasta padrão `exports/`) e informa o
+resultado. `SettingsPage` mostra todos os caminhos e oferece criar backup, restaurar backup (com validação,
+resumo do conteúdo e confirmação explícita antes de sobrescrever), alterar o diretório de dados e voltar ao
+padrão. Detalhes em [REPORTS.md](REPORTS.md). Os seletores de arquivo ficam em `widgets/files.py` e são
+substituídos nos testes.
+
 ## Registrar incursão
 
 Masmorra e item ficam em destaque; os demais campos (data/hora, duração, versão, bônus, evento e observações)
@@ -79,7 +88,8 @@ na correção, a data só é enviada se foi alterada.
 `tests/ui/` roda com `QT_QPA_PLATFORM=offscreen` (configurado na fixture `qapp`), sem dependência extra como
 pytest-qt. As caixas de mensagem são interceptadas. Em modo offscreen no Windows não há fontes, então capturas de
 tela mostram quadrados no lugar do texto dos widgets Qt (os gráficos Matplotlib mostram o texto); isso não ocorre
-na execução normal. A fixture `dialogs` intercepta avisos e confirmações em todos os módulos da interface; sem ela,
+na execução normal. A fixture `dialogs` intercepta avisos, mensagens, confirmações e seletores de arquivo em todos os módulos da
+interface; sem ela,
 um `QMessageBox` real bloquearia o teste.
 
 ## Armadilha conhecida

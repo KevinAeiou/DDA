@@ -5,8 +5,9 @@ from .base import Page
 from .catalog_pages import DungeonsPage, ItemsPage
 from .dashboard_page import DashboardPage
 from .history_page import HistoryPage
-from .placeholder_page import PlaceholderPage, SettingsPage
 from .register_page import RegisterRunPage
+from .reports_page import ReportsPage
+from .settings_page import SettingsPage
 
 __all__ = [
     "AnalysisPage",
@@ -15,7 +16,7 @@ __all__ = [
     "HistoryPage",
     "ItemsPage",
     "Page",
-    "PlaceholderPage",
     "RegisterRunPage",
+    "ReportsPage",
     "SettingsPage",
 ]

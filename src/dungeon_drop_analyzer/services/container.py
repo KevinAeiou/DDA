@@ -10,6 +10,7 @@ from dungeon_drop_analyzer.core.timeutils import utc_now
 
 from .analytics import AnalyticsService
 from .audit import AuditTrailService
+from .backup import BackupService
 from .catalog import Clock, DungeonService, ItemService
 from .runs import RunService
 
@@ -21,6 +22,7 @@ class Services:
     runs: RunService
     audit: AuditTrailService
     analytics: AnalyticsService
+    backup: BackupService
 
     @classmethod
     def create(cls, session_factory: sessionmaker[Session], clock: Clock = utc_now) -> Services:
@@ -30,4 +32,5 @@ class Services:
             runs=RunService(session_factory, clock),
             audit=AuditTrailService(session_factory),
             analytics=AnalyticsService(session_factory),
+            backup=BackupService(session_factory.kw["bind"]),
         )

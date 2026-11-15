@@ -15,3 +15,11 @@ class NotFoundError(DomainError):
 
 class DuplicateError(DomainError):
     pass
+
+
+class BackupError(DomainError):
+    pass
+
+
+class ExportError(DomainError):
+    pass

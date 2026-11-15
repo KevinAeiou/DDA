@@ -78,10 +78,13 @@ Patefield vetorizadas para que a análise por item na interface seja instantâne
 
 **Saída (critérios 8, 10 na UI):** resultados da UI conferem com o núcleo estatístico.
 
-## Fase 5 — Exportação, backup e restauração ☐
+## Fase 5 — Exportação, backup e restauração ☑
 
 - CSV (histórico, frequências) e XLSX consolidado com método, amostra, valor-p, filtros e data/hora.
 - Backup manual consistente, validação antes de restaurar, confirmação antes de sobrescrever.
+
+Decisões e convenções: [REPORTS.md](REPORTS.md). Também foi concluída a escolha do diretório de dados pela
+interface (`config.json` no perfil do usuário), prevista na seção 11 da especificação.
 
 **Saída (critérios 11–12):** arquivos abrem corretamente; backup/restauração testados.
 

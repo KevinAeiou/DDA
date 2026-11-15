@@ -13,8 +13,8 @@ from dungeon_drop_analyzer.ui.pages import (
     HistoryPage,
     ItemsPage,
     Page,
-    PlaceholderPage,
     RegisterRunPage,
+    ReportsPage,
     SettingsPage,
 )
 from dungeon_drop_analyzer.ui.widgets.messages import APP_TITLE
@@ -35,10 +35,8 @@ class MainWindow(QMainWindow):
             "Masmorras": DungeonsPage(services),
             "Itens": ItemsPage(services),
             "Análise estatística": AnalysisPage(services),
-            "Relatórios": PlaceholderPage(
-                "Relatórios", "Exportação em CSV e XLSX chega na Fase 5."
-            ),
-            "Configurações e backup": SettingsPage(settings),
+            "Relatórios": ReportsPage(services, settings),
+            "Configurações e backup": SettingsPage(settings, services),
         }
         self.nav = QListWidget()
         self.nav.setFixedWidth(200)

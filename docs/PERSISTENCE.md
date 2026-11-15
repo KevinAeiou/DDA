@@ -6,8 +6,11 @@ Complementa as seções 5, 8 e 11 de [SPECIFICATION.md](SPECIFICATION.md).
 
 - Banco SQLite em `dda.db` dentro do diretório de dados do usuário: `%LOCALAPPDATA%\DungeonDropAnalyzer` no
   Windows (ou `~/.local/share/DungeonDropAnalyzer` sem `LOCALAPPDATA`). A variável `DDA_DATA_DIR` ou o argumento
-  de `Settings.load(data_dir)` sobrescrevem o caminho. Logs ficam em `logs/` e backups, no futuro, em `backups/`.
-- A escolha do diretório pelo usuário na interface (e sua persistência) fica para as Fases 3 e 5.
+  de `Settings.load(data_dir)` sobrescrevem o caminho. Subpastas: `logs/`, `backups/` e `exports/`.
+- Prioridade do diretório de dados: argumento explícito, variável `DDA_DATA_DIR`, escolha salva na interface
+  (`config.json` em `%LOCALAPPDATA%\DungeonDropAnalyzer`, que é sempre a pasta fixa de configuração) e, por fim,
+  a pasta padrão. A troca vale a partir da próxima inicialização e não move os dados existentes.
+- Backup e restauração: ver [REPORTS.md](REPORTS.md).
 - `initialize(settings)` cria os diretórios, configura o log rotativo (1 MB × 5 arquivos), abre o banco com
   `PRAGMA foreign_keys=ON` em toda conexão e aplica as migrações até `head`.
 

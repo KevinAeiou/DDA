@@ -50,6 +50,10 @@ class Dialogs:
         self.errors: list[str] = []
         self.confirm_answer = True
         self.confirmations: list[str] = []
+        self.infos: list[str] = []
+        self.save_path = None
+        self.open_path = None
+        self.directory = None
 
 
 @pytest.fixture
@@ -65,13 +69,32 @@ def dialogs(monkeypatch, qapp):
         state.confirmations.append(text)
         return state.confirm_answer
 
+    def fake_info(parent, text):
+        state.infos.append(text)
+
+    def fake_save(parent, title, default_path, name_filter):
+        return state.save_path
+
+    def fake_open(parent, title, start_dir, name_filter):
+        return state.open_path
+
+    def fake_directory(parent, title, start_dir):
+        return state.directory
+
+    replacements = {
+        "show_error": fake_error,
+        "show_info": fake_info,
+        "confirm": fake_confirm,
+        "choose_save_path": fake_save,
+        "choose_open_path": fake_open,
+        "choose_directory": fake_directory,
+    }
     for name, module in list(sys.modules.items()):
         if not name.startswith("dungeon_drop_analyzer.ui") or module is None:
             continue
-        if hasattr(module, "show_error"):
-            monkeypatch.setattr(module, "show_error", fake_error)
-        if hasattr(module, "confirm"):
-            monkeypatch.setattr(module, "confirm", fake_confirm)
+        for attribute, replacement in replacements.items():
+            if hasattr(module, attribute):
+                monkeypatch.setattr(module, attribute, replacement)
     return state
 
 
