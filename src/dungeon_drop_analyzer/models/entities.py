@@ -19,6 +19,35 @@ class TriState(enum.StrEnum):
     UNKNOWN = "unknown"
 
 
+class ItemCategory(enum.StrEnum):
+    WEAPONS = "weapons"
+    ARMOR = "armor"
+    ACCESSORIES = "accessories"
+    RELICS = "relics"
+    AMPLIFICATION_RESOURCES = "amplification_resources"
+    CRAFTING_RESOURCES = "crafting_resources"
+    CONSUMABLES = "consumables"
+    PRECIOUS_BARS = "precious_bars"
+
+    @property
+    def label(self) -> str:
+        return CATEGORY_LABELS[self]
+
+
+CATEGORY_LABELS = {
+    ItemCategory.WEAPONS: "Armas",
+    ItemCategory.ARMOR: "Armaduras",
+    ItemCategory.ACCESSORIES: "Acessórios",
+    ItemCategory.RELICS: "Relíquias",
+    ItemCategory.AMPLIFICATION_RESOURCES: "Recursos de amplificação",
+    ItemCategory.CRAFTING_RESOURCES: "Recursos de artesanato",
+    ItemCategory.CONSUMABLES: "Consumíveis",
+    ItemCategory.PRECIOUS_BARS: "Barras preciosas",
+}
+
+CATEGORY_CHECK = "category IN ({})".format(", ".join(f"'{c.value}'" for c in ItemCategory))
+
+
 class AuditAction(enum.StrEnum):
     CREATE = "create"
     UPDATE = "update"
@@ -42,10 +71,11 @@ class Dungeon(Base):
 
 class Item(Base):
     __tablename__ = "items"
+    __table_args__ = (CheckConstraint(CATEGORY_CHECK, name="category"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(NAME_LENGTH, collation="NOCASE"), unique=True)
-    category: Mapped[str | None] = mapped_column(String(NAME_LENGTH))
+    category: Mapped[str] = mapped_column(String(NAME_LENGTH))
     description: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("1"))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_default)

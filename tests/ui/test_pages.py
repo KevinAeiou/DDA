@@ -41,10 +41,10 @@ def test_selecao_obrigatoria_para_editar(qapp, services, dialogs):
 
 
 def test_pagina_de_itens_mostra_categoria(qapp, services):
-    services.items.create("Anel", category="acessório")
+    services.items.create("Anel", category="accessories")
     page = ItemsPage(services)
     page.refresh()
-    assert (cell(page, 0, 0), cell(page, 0, 1), cell(page, 0, 3)) == ("Anel", "acessório", "Sim")
+    assert (cell(page, 0, 0), cell(page, 0, 1), cell(page, 0, 3)) == ("Anel", "Acessórios", "Sim")
 
 
 def test_registro_exige_selecao_e_grava_com_feedback(qapp, services, seeded, dialogs):
@@ -76,8 +76,8 @@ def test_registro_so_lista_ativos_e_orienta_cadastro(qapp, services, dialogs):
     assert not page.save_button.isEnabled()
     assert "masmorras e itens" in page.hint.text()
     d = services.dungeons.create("A", 1)
-    i = services.items.create("X")
-    services.items.create("Y")
+    i = services.items.create("X", "weapons")
+    services.items.create("Y", "weapons")
     services.items.set_active(i.id, False)
     page.refresh()
     assert page.save_button.isEnabled()
@@ -203,7 +203,7 @@ def test_fluxo_completo_cadastro_registro_historico(qapp, services, settings, di
     janela = MainWindow(services, settings)
     janela.open_page("Masmorras")
     services.dungeons.create("Floresta", 2)
-    services.items.create("Arco")
+    services.items.create("Arco", "weapons")
     janela.open_page("Registrar incursão")
     registro = janela.pages["Registrar incursão"]
     registro.form.dungeon_combo.setCurrentIndex(0)
@@ -214,3 +214,21 @@ def test_fluxo_completo_cadastro_registro_historico(qapp, services, settings, di
     assert historico.table.rowCount() == 1
     assert cell(historico, 0, 1) == "Floresta" and cell(historico, 0, 3) == "Arco"
     assert janela.statusBar().currentMessage() == "Incursão registrada: Arco em Floresta."
+
+
+def test_pagina_de_itens_filtra_por_categoria(qapp, services):
+    services.items.create("Espada", category="weapons")
+    services.items.create("Machado", category="weapons")
+    services.items.create("Poção", category="consumables")
+    services.items.create("Anel", category="relics")
+    page = ItemsPage(services)
+    page.refresh()
+    assert page.table.rowCount() == 4
+    page.category_filter.setCurrentIndex(page.category_filter.findData("weapons"))
+    assert page.table.rowCount() == 2
+    assert {cell(page, r, 1) for r in range(2)} == {"Armas"}
+    page.filter_edit.setText("mach")
+    assert page.table.rowCount() == 1 and cell(page, 0, 0) == "Machado"
+    page.filter_edit.clear()
+    page.category_filter.setCurrentIndex(0)
+    assert page.table.rowCount() == 4

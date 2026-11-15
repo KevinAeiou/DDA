@@ -52,15 +52,30 @@ def _alembic_config() -> Config:
     return config
 
 
-def upgrade_database(engine: Engine, revision: str = "head") -> None:
+def _run_migration(engine: Engine, action) -> None:
+    """Executa a migração com foreign keys desligadas (necessário para recriar tabelas no SQLite).
+
+    Ao final, verifica a integridade referencial e religa as foreign keys.
+    """
     config = _alembic_config()
-    with engine.begin() as connection:
-        config.attributes["connection"] = connection
-        command.upgrade(config, revision)
+    with engine.connect() as connection:
+        connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+        connection.commit()
+        try:
+            with connection.begin():
+                config.attributes["connection"] = connection
+                action(config)
+                violations = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+                if violations:
+                    raise RuntimeError(f"Migração violaria a integridade referencial: {violations}")
+        finally:
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+            connection.commit()
+
+
+def upgrade_database(engine: Engine, revision: str = "head") -> None:
+    _run_migration(engine, lambda config: command.upgrade(config, revision))
 
 
 def downgrade_database(engine: Engine, revision: str) -> None:
-    config = _alembic_config()
-    with engine.begin() as connection:
-        config.attributes["connection"] = connection
-        command.downgrade(config, revision)
+    _run_migration(engine, lambda config: command.downgrade(config, revision))

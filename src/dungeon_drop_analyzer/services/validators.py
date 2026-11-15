@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from dungeon_drop_analyzer.core.timeutils import to_utc
-from dungeon_drop_analyzer.models import TriState
+from dungeon_drop_analyzer.models import ItemCategory, TriState
 from dungeon_drop_analyzer.models.entities import NAME_LENGTH
 
 from .errors import ValidationError
@@ -37,6 +37,20 @@ def validate_difficulty(value: object) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 5:
         raise ValidationError("Dificuldade deve ser um inteiro de 1 a 5.")
     return value
+
+
+def validate_category(value: object) -> str:
+    if isinstance(value, ItemCategory):
+        return value.value
+    if value is None or (isinstance(value, str) and not value.strip()):
+        raise ValidationError("Categoria é obrigatória.")
+    if isinstance(value, str):
+        try:
+            return ItemCategory(value.strip()).value
+        except ValueError:
+            pass
+    valid = ", ".join(c.label for c in ItemCategory)
+    raise ValidationError(f"Categoria inválida. Escolha entre: {valid}.")
 
 
 def validate_bool(value: object, label: str) -> bool:

@@ -6,7 +6,8 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBox
 
 from dungeon_drop_analyzer.services import Services
 from dungeon_drop_analyzer.ui.dialogs import DungeonDialog, ItemDialog
-from dungeon_drop_analyzer.ui.widgets.formatting import format_bool
+from dungeon_drop_analyzer.ui.widgets.category_combo import make_category_combo
+from dungeon_drop_analyzer.ui.widgets.formatting import format_bool, format_category
 from dungeon_drop_analyzer.ui.widgets.messages import guarded, show_error
 
 from .base import Page, fill_table, make_table, selected_id
@@ -40,12 +41,20 @@ class _CatalogPage(Page):
         for button in (self.new_button, self.edit_button, self.toggle_button):
             buttons.addWidget(button)
         buttons.addStretch()
+        for widget in self._extra_filters():
+            buttons.addWidget(widget)
         buttons.addWidget(self.filter_edit)
         layout = QVBoxLayout(self)
         layout.addWidget(self.heading)
         layout.addLayout(buttons)
         layout.addWidget(self.table)
         layout.addWidget(self.summary)
+
+    def _extra_filters(self) -> list[QWidget]:
+        return []
+
+    def _extra_match(self, entity) -> bool:
+        return True
 
     def _entities(self) -> list:
         raise NotImplementedError
@@ -61,7 +70,9 @@ class _CatalogPage(Page):
 
     def refresh(self) -> None:
         text = self.filter_edit.text().strip().casefold()
-        entities = [e for e in self._entities() if text in e.name.casefold()]
+        entities = [
+            e for e in self._entities() if text in e.name.casefold() and self._extra_match(e)
+        ]
         fill_table(self.table, [(e.id, self._row(e)) for e in entities])
         total = len(self._entities())
         self.summary.setText(f"{len(entities)} de {total} registro(s) exibido(s).")
@@ -125,11 +136,25 @@ class ItemsPage(_CatalogPage):
     singular = "Item"
     new_label = "Novo item"
 
+    def _extra_filters(self) -> list[QWidget]:
+        self.category_filter = make_category_combo(empty_label="Todas as categorias")
+        self.category_filter.currentIndexChanged.connect(lambda _: self.refresh())
+        return [self.category_filter]
+
+    def _extra_match(self, entity) -> bool:
+        selected = self.category_filter.currentData()
+        return selected is None or entity.category == selected
+
     def _entities(self) -> list:
         return self.services.items.list()
 
     def _row(self, i) -> tuple[str, ...]:
-        return (i.name, i.category or "", i.description or "", format_bool(i.is_active))
+        return (
+            i.name,
+            format_category(i.category),
+            i.description or "",
+            format_bool(i.is_active),
+        )
 
     def _dialog(self, entity=None):
         return ItemDialog(self.services.items, entity, self)

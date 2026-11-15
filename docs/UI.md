@@ -21,8 +21,14 @@ ficam no diretório de dados descrito em [PERSISTENCE.md](PERSISTENCE.md).
   caminhos de dados) e marcadores para Dashboard, Análise estatística e Relatórios (Fases 4 e 5).
 - `dialogs/`: cadastro/edição de masmorras e itens e correção de incursão. Um diálogo só fecha quando o serviço
   aceita os dados; erros de domínio aparecem como aviso e o formulário permanece aberto.
-- `widgets/`: `RunForm` (formulário de incursão), formatação em pt-BR e caixas de mensagem.
+- `widgets/`: `RunForm` (formulário de incursão), `category_combo` (seleção das categorias padrão), formatação
+  em pt-BR e caixas de mensagem.
 - A interface só usa `Services`; não contém fórmulas estatísticas nem acessa o banco.
+
+## Itens e categorias
+
+No cadastro e na edição de item, a categoria é escolhida em uma lista com as oito categorias padrão, obrigatória e sem seleção inicial; não há campo de texto livre. A página de itens exibe o rótulo da categoria e permite filtrar
+por categoria combinado com o filtro por nome.
 
 ## Registrar incursão
 

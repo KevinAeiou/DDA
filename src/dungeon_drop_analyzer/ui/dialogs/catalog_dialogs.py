@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from dungeon_drop_analyzer.models import Dungeon, Item
 from dungeon_drop_analyzer.services import DungeonService, ItemService
+from dungeon_drop_analyzer.ui.widgets.category_combo import make_category_combo, select_category
 
 from .form_dialog import FormDialog
 
@@ -66,18 +67,18 @@ class ItemDialog(FormDialog):
         content = QWidget()
         form = QFormLayout(content)
         self.name = QLineEdit()
-        self.category = QLineEdit()
+        self.category = make_category_combo()
         self.description = QPlainTextEdit()
         self.description.setFixedHeight(80)
         self.active = QCheckBox("Ativo")
         self.active.setChecked(True)
         form.addRow("Nome *", self.name)
-        form.addRow("Categoria", self.category)
+        form.addRow("Categoria *", self.category)
         form.addRow("Descrição", self.description)
         form.addRow("", self.active)
         if item is not None:
             self.name.setText(item.name)
-            self.category.setText(item.category or "")
+            select_category(self.category, item.category)
             self.description.setPlainText(item.description or "")
             self.active.setChecked(item.is_active)
         title = "Novo item" if item is None else "Editar item"
@@ -86,7 +87,7 @@ class ItemDialog(FormDialog):
     def _submit(self) -> None:
         values = {
             "name": self.name.text(),
-            "category": self.category.text(),
+            "category": self.category.currentData(),
             "description": self.description.toPlainText(),
             "is_active": self.active.isChecked(),
         }
