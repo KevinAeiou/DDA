@@ -67,5 +67,5 @@ def audit_trail(factory):
 @pytest.fixture
 def seeded(dungeons, items):
     d = [dungeons.create(f"Masmorra {i}", i) for i in range(1, 6)]
-    it = [items.create(name, category="sintético") for name in ("Item A", "Item B", "Item C")]
+    it = [items.create(name, category="weapons") for name in ("Item A", "Item B", "Item C")]
     return d, it

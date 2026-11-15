@@ -16,7 +16,7 @@ e **não presume** que masmorras mais difíceis dão melhores recompensas — is
 | [SPECIFICATION.md](docs/SPECIFICATION.md) | Especificação de produto, requisitos, metodologia estatística e modelo de dados |
 | [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | Plano de implementação por fases, com critérios de saída |
 | [STATISTICS.md](docs/STATISTICS.md) | Convenções e decisões do núcleo estatístico |
-| [PERSISTENCE.md](docs/PERSISTENCE.md) | Banco, migrações, regras de domínio, filtros e auditoria |
+| [PERSISTENCE.md](docs/PERSISTENCE.md) | Banco, migrações, categorias de itens, regras de domínio, filtros e auditoria |
 | [UI.md](docs/UI.md) | Interface: páginas, fluxo de registro, histórico e testes |
 
 ## Stack
