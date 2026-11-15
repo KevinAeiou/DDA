@@ -7,7 +7,7 @@ Cada incursão concluída garante exatamente um item. O catálogo de itens é ca
 estima frequências, proporções com intervalo de Wilson de 95%, testes globais e por item (com correção de Holm)
 e **não presume** que masmorras mais difíceis dão melhores recompensas — isso é uma hipótese a investigar.
 
-> Status: **Fases 0 a 5 concluídas** (fundação, núcleo estatístico, persistência/domínio, interface de coleta, dashboard, análise, exportação e backup). Falta o empacotamento em executável (Fase 6).
+> Status: **Fases 0 a 5 concluídas; Fase 6 parcial** (executável gerado e validado em isolamento local; falta testar em uma máquina Windows limpa).
 
 ## Documentação
 
@@ -18,6 +18,8 @@ e **não presume** que masmorras mais difíceis dão melhores recompensas — is
 | [STATISTICS.md](docs/STATISTICS.md) | Convenções e decisões do núcleo estatístico |
 | [PERSISTENCE.md](docs/PERSISTENCE.md) | Banco, migrações, categorias de itens, regras de domínio, filtros e auditoria |
 | [REPORTS.md](docs/REPORTS.md) | Exportações CSV/XLSX, backup, validação e restauração |
+| [PACKAGING.md](docs/PACKAGING.md) | Geração do executável, autoverificação, validação e limitações |
+| [USER_GUIDE.md](docs/USER_GUIDE.md) | Instalação e uso para o usuário final |
 | [UI.md](docs/UI.md) | Interface: páginas, registro, histórico, dashboard, análise e testes |
 
 ## Stack
@@ -49,6 +51,15 @@ python -m venv .venv
 
 Para reproduzir exatamente as versões validadas: `pip install -r requirements-lock.txt` e depois
 `pip install -e . --no-deps`.
+
+## Executável
+
+```powershell
+.\scripts\build_exe.ps1
+```
+
+Gera `dist\DungeonDropAnalyzer\` e o zip de distribuição, já validados pela autoverificação
+(`DungeonDropAnalyzer.exe --self-check`). Detalhes em [PACKAGING.md](docs/PACKAGING.md).
 
 ## Comandos úteis
 

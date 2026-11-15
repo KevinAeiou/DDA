@@ -4,7 +4,7 @@ Derivado de [SPECIFICATION.md](SPECIFICATION.md). Regras: uma fase por vez; test
 funcionalidades; não avançar se os critérios da fase anterior falharem; ao final de cada fase relatar decisões,
 arquivos, testes, critérios e pendências.
 
-Legenda: ☐ pendente · ☑ concluído
+Legenda: ☐ pendente · ◐ parcial · ☑ concluído
 
 ## Fase 0 — Fundação do repositório ☑
 
@@ -88,10 +88,14 @@ interface (`config.json` no perfil do usuário), prevista na seção 11 da espec
 
 **Saída (critérios 11–12):** arquivos abrem corretamente; backup/restauração testados.
 
-## Fase 6 — Empacotamento e validação final ☐
+## Fase 6 — Empacotamento e validação final ◐
 
 - Executável com PyInstaller; banco fora da pasta do executável; funcionamento offline.
 - Teste em ambiente Windows limpo; documentação de instalação e uso.
+
+Concluído: executável, autoverificação, teste isolado local e documentação (ver [PACKAGING.md](PACKAGING.md) e
+[USER_GUIDE.md](USER_GUIDE.md)). **Pendente:** teste em uma máquina ou VM Windows realmente limpa (critério 13) e
+a revisão final dos critérios de aceitação com dados reais.
 
 **Saída (critérios 1, 13):** executável validado; todos os critérios de aceitação (seção 12) revisados.
 
