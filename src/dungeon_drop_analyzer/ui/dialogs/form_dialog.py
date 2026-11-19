@@ -28,6 +28,7 @@ class FormDialog(QDialog):
         buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("Cancelar")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        self.buttons = buttons
         layout = QVBoxLayout(self)
         layout.addWidget(content)
         layout.addWidget(buttons)

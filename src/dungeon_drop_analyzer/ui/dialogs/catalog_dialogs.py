@@ -7,8 +7,10 @@ from collections.abc import Sequence
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -22,6 +24,7 @@ from PySide6.QtWidgets import (
 from dungeon_drop_analyzer.models import Dungeon, Item
 from dungeon_drop_analyzer.services import DungeonService, ItemService
 from dungeon_drop_analyzer.ui.widgets.category_combo import make_category_combo, select_category
+from dungeon_drop_analyzer.ui.widgets.messages import guarded
 
 from .form_dialog import FormDialog
 
@@ -123,8 +126,31 @@ class ItemDialog(FormDialog):
             self.set_checked_dungeons({d.id for d in item.dungeons})
             self.description.setPlainText(item.description or "")
             self.active.setChecked(item.is_active)
+        self.created_count = 0
+        self.status = QLabel()
+        self.status.setWordWrap(True)
+        self.status.setVisible(False)
+        form.addRow("", self.status)
         title = "Novo item" if item is None else "Editar item"
         super().__init__(title, content, self._submit, parent)
+        if item is None:
+            self.save_and_new_button = self.buttons.addButton(
+                "Salvar e cadastrar outro", QDialogButtonBox.ButtonRole.ActionRole
+            )
+            self.save_and_new_button.clicked.connect(self.save_and_new)
+
+    def save_and_new(self) -> None:
+        """Salva o item e mantém o formulário aberto, limpando só nome e descrição."""
+        saved_name = self.name.text().strip()
+        ok, _ = guarded(self, self._submit)
+        if not ok:
+            return
+        self.created_count += 1
+        self.name.clear()
+        self.description.clear()
+        self.status.setText(f"Item '{saved_name}' cadastrado. Informe o próximo item.")
+        self.status.setVisible(True)
+        self.name.setFocus()
 
     def _set_all(self, state: Qt.CheckState) -> None:
         for row in range(self.dungeon_list.count()):

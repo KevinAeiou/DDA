@@ -84,6 +84,48 @@ def test_dialogo_exige_masmorra_e_salva_item_em_mais_de_uma(qapp, services, rest
     assert [m.name for m in novo.dungeons] == ["Masmorra 1", "Masmorra 3"]
 
 
+def test_salvar_e_cadastrar_outro_mantem_valores_e_limpa_nome_e_descricao(
+    qapp, services, restrito, dialogs
+):
+    d, _ = restrito
+    dialog = ItemDialog(services.items, services.dungeons.list())
+    dialog.name.setText("Esfera I")
+    dialog.description.setPlainText("Primeira")
+    dialog.category.setCurrentIndex(dialog.category.findData("amplification_resources"))
+    dialog.set_checked_dungeons({d[0].id, d[2].id})
+    dialog.active.setChecked(False)
+    botao(dialog, "Salvar e cadastrar outro").click()
+    assert dialogs.errors == []
+    assert dialog.name.text() == "" and dialog.description.toPlainText() == ""
+    assert dialog.category.currentData() == "amplification_resources"
+    assert dialog.checked_dungeon_ids() == [d[0].id, d[2].id]
+    assert not dialog.active.isChecked()
+    assert "Esfera I" in dialog.status.text() and dialog.created_count == 1
+    dialog.name.setText("Esfera II")
+    botao(dialog, "Salvar e cadastrar outro").click()
+    segundo = next(i for i in services.items.list() if i.name == "Esfera II")
+    assert [m.id for m in segundo.dungeons] == [d[0].id, d[2].id]
+    assert segundo.category == "amplification_resources" and not segundo.is_active
+    assert dialog.created_count == 2
+
+
+def test_salvar_e_cadastrar_outro_mantem_formulario_quando_ha_erro(
+    qapp, services, restrito, dialogs
+):
+    dialog = ItemDialog(services.items, services.dungeons.list())
+    dialog.name.setText("Sem masmorra")
+    dialog.category.setCurrentIndex(dialog.category.findData("weapons"))
+    botao(dialog, "Salvar e cadastrar outro").click()
+    assert "ao menos uma masmorra" in dialogs.errors[-1]
+    assert dialog.name.text() == "Sem masmorra" and dialog.created_count == 0
+
+
+def test_dialogo_de_edicao_nao_tem_salvar_e_cadastrar_outro(qapp, services, restrito):
+    _, (a, *_) = restrito
+    dialog = ItemDialog(services.items, services.dungeons.list(), services.items.get(a.id))
+    assert not any(b.text() == "Salvar e cadastrar outro" for b in dialog.findChildren(QPushButton))
+
+
 def test_dialogo_de_edicao_preseleciona_e_altera_as_masmorras(qapp, services, restrito):
     d, (a, a2, b, c) = restrito
     dialog = ItemDialog(services.items, services.dungeons.list(), services.items.get(b.id))
