@@ -97,9 +97,15 @@ class _CatalogPage(Page):
         return dialog.exec() == dialog.DialogCode.Accepted
 
     def create_new(self) -> None:
-        if self._open_dialog():
+        dialog = self._dialog()
+        accepted = dialog.exec() == dialog.DialogCode.Accepted
+        total = getattr(dialog, "created_count", 0) + (1 if accepted else 0)
+        if total:
             self.refresh()
-            self.message.emit(f"{self.singular} cadastrado(a) com sucesso.")
+            if total == 1:
+                self.message.emit(f"{self.singular} cadastrado(a) com sucesso.")
+            else:
+                self.message.emit(f"{total} registros cadastrados com sucesso.")
 
     def _selected_entity(self):
         entity_id = selected_id(self.table)
