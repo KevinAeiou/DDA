@@ -140,8 +140,9 @@ Permitir criar, consultar, editar e inativar: - Nome: obrigatório e
 (seção 3.1). - Masmorra(s): obrigatória, uma ou mais masmorras em que
 o item pode ser obtido (seção 3.2). - Descrição: opcional. - Ativo: sim/não.
 
-Não remover uma masmorra do cadastro do item se houver incursões desse
-item nela.
+Masmorras inativas não são oferecidas no cadastro e na edição do item
+(vínculos já existentes com elas são preservados). Não remover uma
+masmorra do cadastro do item se houver incursões desse item nela.
 
 Itens inativos permanecem associados ao histórico. Não excluir em
 cascata itens já utilizados.

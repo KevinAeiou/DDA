@@ -241,3 +241,40 @@ def test_analise_exibe_alertas_de_cadastro(qapp, services, restrito, engine):
     page = AnalysisPage(services)
     page.refresh()
     assert "sem masmorras definidas" in page.status.text() and "A2" in page.status.text()
+
+
+def test_dialogo_de_item_lista_apenas_masmorras_ativas(qapp, services, restrito):
+    d, _ = restrito
+    services.dungeons.set_active(d[1].id, False)
+    page = ItemsPage(services)
+    dialog = page._dialog()
+    listadas = [dialog.dungeon_list.item(i).text() for i in range(dialog.dungeon_list.count())]
+    assert listadas == ["Masmorra 1 (dificuldade 1)", "Masmorra 3 (dificuldade 3)"]
+    edicao = page._dialog(services.items.get(restrito[1][0].id))
+    assert edicao.dungeon_list.count() == 2
+
+
+def test_edicao_preserva_vinculo_com_masmorra_inativa_que_nao_e_listada(qapp, services, restrito):
+    d, (a, a2, b, c) = restrito
+    services.dungeons.set_active(d[1].id, False)
+    page = ItemsPage(services)
+    dialog = page._dialog(services.items.get(b.id))
+    assert dialog.checked_dungeon_ids() == [d[0].id]
+    dialog.description.setPlainText("nova descrição")
+    dialog.accept()
+    salvo = services.items.get(b.id)
+    assert salvo.description == "nova descrição"
+    assert [m.name for m in salvo.dungeons] == ["Masmorra 1", "Masmorra 2"]
+
+
+def test_item_novo_so_pode_ser_vinculado_a_masmorras_listadas(qapp, services, restrito, dialogs):
+    d, _ = restrito
+    services.dungeons.set_active(d[2].id, False)
+    page = ItemsPage(services)
+    dialog = page._dialog()
+    dialog.name.setText("Novo")
+    dialog.category.setCurrentIndex(dialog.category.findData("armor"))
+    botao(dialog, "Todas").click()
+    dialog.accept()
+    novo = next(i for i in services.items.list() if i.name == "Novo")
+    assert [m.name for m in novo.dungeons] == ["Masmorra 1", "Masmorra 2"]
