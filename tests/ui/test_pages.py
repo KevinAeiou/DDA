@@ -86,8 +86,9 @@ def test_registro_so_lista_ativos_e_orienta_cadastro(qapp, services, dialogs):
     services.items.set_active(i.id, False)
     page.refresh()
     assert page.save_button.isEnabled()
-    assert page.form.item_combo.count() == 1
     assert d.name in page.form.dungeon_combo.itemText(0)
+    page.form.dungeon_combo.setCurrentIndex(0)
+    assert page.form.item_combo.count() == 1
 
 
 def registrar(services, seeded):

@@ -39,9 +39,10 @@ por categoria combinado com o filtro por nome.
 
 ## Registro por masmorra
 
-Ao escolher a masmorra, a lista de itens passa a mostrar só os que podem ser obtidos nela (mais os itens ainda sem
-masmorras definidas). Sem itens para a masmorra, a página orienta a editar o cadastro do item. O serviço valida de
-novo ao salvar.
+O campo de busca de itens só é habilitado depois de escolher a masmorra, e a lista mostra apenas os itens
+cadastrados para ela (itens ainda sem masmorras definidas não são listados). Trocar a masmorra atualiza a lista e
+limpa um item que não pertença à nova escolha. Sem itens para a masmorra, a página orienta a editar o cadastro do
+item. O serviço valida de novo ao salvar.
 
 ## Dashboard
 

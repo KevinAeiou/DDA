@@ -158,8 +158,9 @@ sim/não/desconhecido. - Observações: opcional.
 Regras: - Uma incursão concluída possui exatamente uma recompensa. - Não
 salvar incursão concluída sem item. - Não permitir mais de um item na
 mesma incursão. - O item deve poder ser obtido na masmorra escolhida
-(seção 3.2). - Salvar em transação. - Exibir feedback de sucesso ou
-erro.
+(seção 3.2). - Na tela, a busca de itens só é habilitada após escolher a
+masmorra e lista apenas os itens dela. - Salvar em transação. - Exibir
+feedback de sucesso ou erro.
 
 ### RF-04 --- Histórico
 

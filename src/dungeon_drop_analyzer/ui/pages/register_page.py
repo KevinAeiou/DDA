@@ -53,16 +53,15 @@ class RegisterRunPage(Page):
         self._update_hint()
 
     def _items_for(self, dungeon_id: int | None) -> list:
+        """Somente os itens cadastrados para a masmorra; sem masmorra escolhida, nenhum."""
         if dungeon_id is None:
-            return list(self._items)
-        return [
-            item
-            for item in self._items
-            if not item.dungeons or dungeon_id in {d.id for d in item.dungeons}
-        ]
+            return []
+        return [item for item in self._items if dungeon_id in {d.id for d in item.dungeons}]
 
     def _update_item_choices(self) -> None:
-        self.form.set_items(self._items_for(self.form.selected_dungeon_id()))
+        dungeon_id = self.form.selected_dungeon_id()
+        self.form.set_items(self._items_for(dungeon_id))
+        self.form.set_item_search_enabled(dungeon_id is not None)
 
     def _on_dungeon_changed(self) -> None:
         if self._loading:
@@ -72,19 +71,25 @@ class RegisterRunPage(Page):
 
     def _update_hint(self) -> None:
         if self._missing:
-            self.hint.setText(
-                f"Cadastre {' e '.join(self._missing)} ativos antes de registrar incursões."
+            text = f"Cadastre {' e '.join(self._missing)} ativos antes de registrar incursões."
+        elif self.form.selected_dungeon_id() is None:
+            text = (
+                "Selecione a masmorra para habilitar a busca de itens. Cada incursão rende um "
+                "único item."
             )
-        elif self.form.selected_dungeon_id() is not None and self.form.item_combo.count() == 0:
-            self.hint.setText(
+        elif self.form.item_combo.count() == 0:
+            text = (
                 "Nenhum item ativo está cadastrado para esta masmorra. Edite o cadastro do item "
                 "para informar onde ele pode ser obtido."
             )
+            if any(not item.dungeons for item in self._items):
+                text += " Itens sem masmorras definidas não são listados."
         else:
-            self.hint.setText(
-                "Selecione a masmorra e o item recebido (a lista mostra os itens que podem ser "
-                "obtidos na masmorra escolhida). Cada incursão rende um único item."
+            text = (
+                "Selecione o item recebido (a lista mostra os itens que podem ser obtidos na "
+                "masmorra escolhida). Cada incursão rende um único item."
             )
+        self.hint.setText(text)
         self.hint.setVisible(True)
 
     def save(self) -> None:
