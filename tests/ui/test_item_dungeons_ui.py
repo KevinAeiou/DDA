@@ -126,12 +126,25 @@ def test_pagina_de_itens_mostra_masmorras_filtra_e_avisa_itens_sem_definicao(
     assert "A2" not in {cell(page.table, r, 0) for r in range(page.table.rowCount())}
 
 
+def test_busca_de_itens_so_e_habilitada_com_masmorra_selecionada(qapp, services, restrito):
+    page = RegisterRunPage(services)
+    page.refresh()
+    assert page.form.selected_dungeon_id() is None
+    assert not page.form.item_combo.isEnabled() and page.form.item_combo.count() == 0
+    assert page.form.item_combo.lineEdit().placeholderText() == "Selecione a masmorra primeiro"
+    assert "habilitar a busca de itens" in page.hint.text()
+    page.form.dungeon_combo.setCurrentIndex(0)
+    assert page.form.item_combo.isEnabled()
+    assert page.form.item_combo.lineEdit().placeholderText() == "Digite para buscar o item"
+    page.form.dungeon_combo.setCurrentIndex(-1)
+    assert not page.form.item_combo.isEnabled() and page.form.item_combo.count() == 0
+
+
 def test_registro_lista_apenas_itens_da_masmorra_escolhida(qapp, services, restrito, dialogs):
     d, (a, a2, b, c) = restrito
     page = RegisterRunPage(services)
     page.refresh()
     combo = page.form.item_combo
-    assert combo.count() == 4
     page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
     assert [combo.itemText(i) for i in range(combo.count())] == ["A", "A2", "B"]
     page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[2].id))
@@ -144,18 +157,32 @@ def test_registro_lista_apenas_itens_da_masmorra_escolhida(qapp, services, restr
     page.save()
     assert services.runs.count() == antes + 1
     assert dialogs.errors == []
+    assert page.form.item_combo.isEnabled()
 
 
-def test_registro_com_item_sem_masmorras_definidas_continua_disponivel(
-    qapp, services, restrito, engine
-):
+def test_registro_nao_lista_item_sem_masmorras_definidas(qapp, services, restrito, engine):
     d, (a, a2, b, c) = restrito
     apagar_associacoes(engine, c.id)
     page = RegisterRunPage(services)
     page.refresh()
+    for masmorra in d:
+        page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(masmorra.id))
+        nomes = [page.form.item_combo.itemText(i) for i in range(page.form.item_combo.count())]
+        assert "C" not in nomes
+
+
+def test_registro_exige_item_da_lista_mesmo_digitando_item_de_outra_masmorra(
+    qapp, services, restrito, dialogs
+):
+    d, _ = restrito
+    page = RegisterRunPage(services)
+    page.refresh()
     page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
-    nomes = [page.form.item_combo.itemText(i) for i in range(page.form.item_combo.count())]
-    assert "C" in nomes
+    page.form.item_combo.setCurrentText("C")
+    antes = services.runs.count()
+    page.save()
+    assert dialogs.errors[-1] == "Selecione um item da lista."
+    assert services.runs.count() == antes
 
 
 def test_registro_avisa_quando_nao_ha_itens_para_a_masmorra(qapp, services, restrito):

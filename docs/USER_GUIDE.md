@@ -25,13 +25,13 @@ dados existentes não são movidos: crie um backup e restaure-o depois).
    acessórios, relíquias, recursos de amplificação, recursos de artesanato, consumíveis e barras preciosas, e informa
    em quais masmorras pode ser obtido (uma ou mais). Exemplo: a Esfera de Aprimoramento de Defesa I em todas as
    masmorras; a Capa do Mercenário apenas em Minas Abandonadas.
-3. **Registrar incursão:** escolha a masmorra (a lista de itens mostra só os que podem ser obtidos nela) e o item recebido e clique em "Salvar incursão". Em "Mais opções" é
+3. **Registrar incursão:** escolha a masmorra (só então a busca de itens é habilitada, e ela lista apenas os itens cadastrados para essa masmorra) e o item recebido e clique em "Salvar incursão". Em "Mais opções" é
    possível ajustar data/hora, duração, versão do jogo, bônus de drop, evento ativo e observações. Cada incursão
    concluída rende exatamente um item.
 4. **Histórico:** consulte, filtre, corrija ou exclua incursões. Correções e exclusões ficam registradas na auditoria.
 
 **Itens cadastrados antes do campo Masmorra:** edite cada um e marque as masmorras em que pode ser obtido. Enquanto
-isso não é feito, aparecem como "⚠ Não definidas", podem ser registrados em qualquer masmorra e são tratados como
+isso não é feito, aparecem como "⚠ Não definidas", não são listados no registro de incursão e são tratados como
 disponíveis em todas nos cálculos (o sistema avisa). Masmorras inativas não aparecem na lista (reative-a em Masmorras para vinculá-la a itens; vínculos antigos são
 mantidos). Não é possível tirar uma masmorra do cadastro de um item que já
 tem incursões nela; corrija ou exclua essas incursões antes.

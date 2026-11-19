@@ -42,7 +42,7 @@ class RunForm(QWidget):
         self.item_combo = QComboBox()
         self.item_combo.setEditable(True)
         self.item_combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-        self.item_combo.setPlaceholderText("Selecione ou digite o item")
+        self.item_combo.lineEdit().setPlaceholderText("Selecione ou digite o item")
         completer = QCompleter(self.item_combo.model(), self.item_combo)
         completer.setFilterMode(Qt.MatchFlag.MatchContains)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -112,6 +112,12 @@ class RunForm(QWidget):
             self.item_combo.addItem(item.name, item.id)
         self._select(self.dungeon_combo, dungeon_id)
         self._select(self.item_combo, item_id)
+
+    def set_item_search_enabled(self, enabled: bool) -> None:
+        self.item_combo.setEnabled(enabled)
+        self.item_combo.lineEdit().setPlaceholderText(
+            "Digite para buscar o item" if enabled else "Selecione a masmorra primeiro"
+        )
 
     def set_items(self, items: Sequence[Item]) -> None:
         item_id = self.selected_item_id()

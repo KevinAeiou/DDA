@@ -70,7 +70,8 @@ em que o item pode ser obtido.
   existentes com uma masmorra depois inativada continuam válidos e podem ser mantidos nas edições.
 - A trilha de auditoria do item inclui `dungeon_ids` nos dados antes e depois.
 - `RunService.register`/`update` recusam item fora das masmorras dele (mensagem com as masmorras do item). Item sem
-  masmorras definidas fica liberado até ser corrigido. Uma correção que não troca masmorra nem item não revalida
+  masmorras definidas fica liberado no serviço até ser corrigido (a tela de registro, porém, só lista itens cadastrados
+  para a masmorra escolhida). Uma correção que não troca masmorra nem item não revalida
   incursões antigas.
 - `ItemRepository.dungeon_map()` devolve `item_id → {dungeon_id}`; `RunRepository.count_item_in_dungeon()` apoia a
   regra de remoção.
