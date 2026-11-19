@@ -138,7 +138,7 @@ def test_restaura_backup_apos_confirmacao_com_copia_de_seguranca(
     dialogs.save_path = tmp_path / "bom.db"
     pagina_config.backup_button.click()
     services.runs.delete(services.runs.list()[0].id)
-    services.items.create("Extra", "relics")
+    services.items.create("Extra", "relics", [ds[0].id])
     assert services.runs.count() == 39
 
     dialogs.open_path = tmp_path / "bom.db"

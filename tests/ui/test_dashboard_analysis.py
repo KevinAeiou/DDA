@@ -72,7 +72,7 @@ def test_dashboard_mostra_totais_distribuicao_e_empates(qapp, services, cenario)
     assert "Escudo, Espada (empate)" in texto and "Anel" in texto
     assert "nunca obtido" in texto
     assert [cell(page.item_table, r, 0) for r in range(3)] == ["Escudo", "Espada", "Anel"]
-    assert cell(page.item_table, 0, 2) == "60" and cell(page.item_table, 0, 3) == "50,0%"
+    assert cell(page.item_table, 0, 3) == "60" and cell(page.item_table, 0, 4) == "50,0%"
     assert not page.item_chart.is_empty and not page.category_chart.is_empty
     assert not page.timeline_chart.is_empty
 
@@ -155,7 +155,7 @@ def test_analise_distribuicao_completa_com_esperados(qapp, services, cenario):
     page = AnalysisPage(services)
     page.refresh()
     resumo = page.distribution_summary.text()
-    assert "tabela 3×2" in resumo and "H0:" in resumo
+    assert "3 masmorras × 2 itens comuns" in resumo and "H0:" in resumo
     assert "Qui-quadrado" in resumo and "Interpretação" in resumo
     tabela = page.distribution_table
     assert tabela.columnCount() == 3 and tabela.rowCount() == 3

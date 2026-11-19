@@ -113,6 +113,13 @@ class RunForm(QWidget):
         self._select(self.dungeon_combo, dungeon_id)
         self._select(self.item_combo, item_id)
 
+    def set_items(self, items: Sequence[Item]) -> None:
+        item_id = self.selected_item_id()
+        self.item_combo.clear()
+        for item in items:
+            self.item_combo.addItem(item.name, item.id)
+        self._select(self.item_combo, item_id)
+
     @staticmethod
     def _select(combo: QComboBox, data: int | None) -> None:
         index = combo.findData(data) if data is not None else -1

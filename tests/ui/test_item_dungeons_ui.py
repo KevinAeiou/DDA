@@ -1,0 +1,243 @@
+"""Masmorras do item na interface: cadastro, registro, dashboard e análise (SINTÉTICO)."""
+
+from datetime import datetime
+
+import pytest
+from PySide6.QtWidgets import QPushButton
+from sqlalchemy import text
+
+from dungeon_drop_analyzer.ui.dialogs import ItemDialog
+from dungeon_drop_analyzer.ui.pages import AnalysisPage, DashboardPage, ItemsPage, RegisterRunPage
+
+
+def cell(table, row, column):
+    return table.item(row, column).text()
+
+
+def linha(table, nome):
+    return next(r for r in range(table.rowCount()) if cell(table, r, 0) == nome)
+
+
+def registrar(services, dungeon, item, quantidade):
+    for k in range(quantidade):
+        services.runs.register(
+            dungeon.id, item.id, completed_at=datetime(2026, 3, 1 + k % 20, 10, k)
+        )
+
+
+def apagar_associacoes(engine, item_id, dungeon_id=None):
+    with engine.begin() as conn:
+        if dungeon_id is None:
+            conn.execute(text("DELETE FROM item_dungeons WHERE item_id = :i"), {"i": item_id})
+        else:
+            conn.execute(
+                text("DELETE FROM item_dungeons WHERE item_id = :i AND dungeon_id = :d"),
+                {"i": item_id, "d": dungeon_id},
+            )
+
+
+@pytest.fixture
+def restrito(services):
+    d = [services.dungeons.create(f"Masmorra {i}", i) for i in range(1, 4)]
+    todas = [m.id for m in d]
+    a = services.items.create("A", "weapons", todas)
+    a2 = services.items.create("A2", "armor", todas)
+    b = services.items.create("B", "relics", [d[0].id, d[1].id])
+    c = services.items.create("C", "consumables", [d[2].id])
+    registrar(services, d[0], a, 10)
+    registrar(services, d[0], a2, 10)
+    registrar(services, d[0], b, 30)
+    registrar(services, d[1], a, 11)
+    registrar(services, d[1], a2, 9)
+    registrar(services, d[1], b, 30)
+    registrar(services, d[2], a, 10)
+    registrar(services, d[2], a2, 10)
+    registrar(services, d[2], c, 30)
+    return d, (a, a2, b, c)
+
+
+def botao(dialog, texto):
+    return next(b for b in dialog.findChildren(QPushButton) if b.text() == texto)
+
+
+def test_dialogo_lista_as_masmorras_e_permite_marcar_todas_ou_nenhuma(qapp, services, restrito):
+    d, _ = restrito
+    dialog = ItemDialog(services.items, services.dungeons.list())
+    assert dialog.dungeon_list.count() == 3 and dialog.checked_dungeon_ids() == []
+    assert dialog.dungeon_list.item(0).text() == "Masmorra 1 (dificuldade 1)"
+    botao(dialog, "Todas").click()
+    assert dialog.checked_dungeon_ids() == [m.id for m in d]
+    botao(dialog, "Nenhuma").click()
+    assert dialog.checked_dungeon_ids() == []
+
+
+def test_dialogo_exige_masmorra_e_salva_item_em_mais_de_uma(qapp, services, restrito, dialogs):
+    d, _ = restrito
+    dialog = ItemDialog(services.items, services.dungeons.list())
+    dialog.name.setText("Esfera de Aprimoramento de Defesa I")
+    dialog.category.setCurrentIndex(dialog.category.findData("amplification_resources"))
+    dialog.accept()
+    assert "ao menos uma masmorra" in dialogs.errors[-1]
+    dialog.set_checked_dungeons({d[0].id, d[2].id})
+    dialog.accept()
+    novo = next(i for i in services.items.list() if i.name.startswith("Esfera"))
+    assert [m.name for m in novo.dungeons] == ["Masmorra 1", "Masmorra 3"]
+
+
+def test_dialogo_de_edicao_preseleciona_e_altera_as_masmorras(qapp, services, restrito):
+    d, (a, a2, b, c) = restrito
+    dialog = ItemDialog(services.items, services.dungeons.list(), services.items.get(b.id))
+    assert dialog.checked_dungeon_ids() == [d[0].id, d[1].id]
+    dialog.set_checked_dungeons({d[0].id, d[1].id, d[2].id})
+    dialog.accept()
+    assert len(services.items.get(b.id).dungeons) == 3
+
+
+def test_dialogo_nao_deixa_remover_masmorra_com_incursoes(qapp, services, restrito, dialogs):
+    d, (a, a2, b, c) = restrito
+    dialog = ItemDialog(services.items, services.dungeons.list(), services.items.get(b.id))
+    dialog.set_checked_dungeons({d[0].id})
+    dialog.accept()
+    assert "incursão" in dialogs.errors[-1] and "Masmorra 2" in dialogs.errors[-1]
+    assert len(services.items.get(b.id).dungeons) == 2
+
+
+def test_pagina_de_itens_mostra_masmorras_filtra_e_avisa_itens_sem_definicao(
+    qapp, services, restrito, engine
+):
+    d, (a, a2, b, c) = restrito
+    page = ItemsPage(services)
+    page.refresh()
+    assert [page.table.horizontalHeaderItem(i).text() for i in range(5)][2] == "Masmorras"
+    assert cell(page.table, linha(page.table, "A"), 2) == "Todas (3)"
+    assert cell(page.table, linha(page.table, "B"), 2) == "Masmorra 1, Masmorra 2"
+    assert cell(page.table, linha(page.table, "C"), 2) == "Masmorra 3"
+    assert "⚠" not in page.summary.text()
+
+    page.dungeon_filter.setCurrentIndex(page.dungeon_filter.findData(d[2].id))
+    assert {cell(page.table, r, 0) for r in range(page.table.rowCount())} == {"A", "A2", "C"}
+    page.dungeon_filter.setCurrentIndex(0)
+
+    apagar_associacoes(engine, a2.id)
+    page.refresh()
+    assert cell(page.table, linha(page.table, "A2"), 2) == "⚠ Não definidas"
+    assert "1 item(ns) sem masmorras definidas" in page.summary.text()
+    page.dungeon_filter.setCurrentIndex(page.dungeon_filter.findData(d[0].id))
+    assert "A2" not in {cell(page.table, r, 0) for r in range(page.table.rowCount())}
+
+
+def test_registro_lista_apenas_itens_da_masmorra_escolhida(qapp, services, restrito, dialogs):
+    d, (a, a2, b, c) = restrito
+    page = RegisterRunPage(services)
+    page.refresh()
+    combo = page.form.item_combo
+    assert combo.count() == 4
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
+    assert [combo.itemText(i) for i in range(combo.count())] == ["A", "A2", "B"]
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[2].id))
+    assert [combo.itemText(i) for i in range(combo.count())] == ["A", "A2", "C"]
+    page.form.item_combo.setCurrentText("C")
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
+    assert page.form.selected_item_id() is None
+    page.form.item_combo.setCurrentText("B")
+    antes = services.runs.count()
+    page.save()
+    assert services.runs.count() == antes + 1
+    assert dialogs.errors == []
+
+
+def test_registro_com_item_sem_masmorras_definidas_continua_disponivel(
+    qapp, services, restrito, engine
+):
+    d, (a, a2, b, c) = restrito
+    apagar_associacoes(engine, c.id)
+    page = RegisterRunPage(services)
+    page.refresh()
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
+    nomes = [page.form.item_combo.itemText(i) for i in range(page.form.item_combo.count())]
+    assert "C" in nomes
+
+
+def test_registro_avisa_quando_nao_ha_itens_para_a_masmorra(qapp, services, restrito):
+    d, _ = restrito
+    nova = services.dungeons.create("Masmorra Nova", 4)
+    page = RegisterRunPage(services)
+    page.refresh()
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(nova.id))
+    assert page.form.item_combo.count() == 0
+    assert "Nenhum item ativo está cadastrado para esta masmorra" in page.hint.text()
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
+    assert "a lista mostra os itens" in page.hint.text()
+
+
+def test_dashboard_mostra_masmorras_do_item_e_celulas_indisponiveis(qapp, services, restrito):
+    page = DashboardPage(services)
+    page.refresh()
+    tabela = page.item_table
+    assert tabela.horizontalHeaderItem(2).text() == "Masmorras"
+    assert cell(tabela, linha(tabela, "A"), 2) == "Todas (3)"
+    assert cell(tabela, linha(tabela, "B"), 2) == "Masmorra 1, Masmorra 2"
+    comparacao = page.comparison_table
+    b, c = linha(comparacao, "B"), linha(comparacao, "C")
+    assert cell(comparacao, b, 1) == "30 (60,0%)" and cell(comparacao, b, 3) == "—"
+    assert cell(comparacao, c, 1) == "—" and cell(comparacao, c, 3) == "30 (60,0%)"
+    assert page.alerts.text() == ""
+
+
+def test_dashboard_alerta_itens_sem_masmorras_e_incursoes_inconsistentes(
+    qapp, services, restrito, engine
+):
+    d, (a, a2, b, c) = restrito
+    apagar_associacoes(engine, a2.id)
+    apagar_associacoes(engine, b.id, d[1].id)
+    page = DashboardPage(services)
+    page.refresh()
+    alerta = page.alerts.text()
+    assert "sem masmorras definidas" in alerta and "A2" in alerta
+    assert "30 incursão(ões)" in alerta and "B em Masmorra 2 (30)" in alerta
+
+
+def test_analise_por_item_mostra_masmorras_consideradas(qapp, services, restrito):
+    page = AnalysisPage(services)
+    page.refresh()
+    page.item_combo.setCurrentIndex(page.item_combo.findText("B"))
+    assert "Masmorras consideradas:</b> Masmorra 1, Masmorra 2" in page.item_summary.text()
+    assert page.item_table.rowCount() == 2 and page.pair_table.rowCount() == 1
+    assert cell(page.pair_table, 0, 0) == "Masmorra 1 vs Masmorra 2"
+    page.item_combo.setCurrentIndex(page.item_combo.findText("C"))
+    assert "Masmorras consideradas:</b> Masmorra 3" in page.item_summary.text()
+    assert "Teste indefinido" in page.item_summary.text()
+    assert page.item_table.rowCount() == 1 and page.pair_table.rowCount() == 0
+
+
+def test_analise_distribuicao_marca_itens_comuns_e_celulas_indisponiveis(qapp, services, restrito):
+    page = AnalysisPage(services)
+    page.refresh()
+    resumo = page.distribution_summary.text()
+    assert "3 masmorras × 2 itens comuns" in resumo and "Itens comuns:</b> A, A2" in resumo
+    assert "condicional" in resumo
+    tabela = page.distribution_table
+    cabecalhos = [tabela.horizontalHeaderItem(i).text() for i in range(tabela.columnCount())]
+    assert cabecalhos == ["Masmorra (n)", "A *", "A2 *", "B", "C"]
+    assert cell(tabela, 0, 1) == "10 (esp. 10,3)"
+    assert cell(tabela, 0, 3) == "30" and cell(tabela, 0, 4) == "—"
+    assert cell(tabela, 2, 3) == "—" and cell(tabela, 2, 4) == "30"
+
+
+def test_analise_dificuldade_marca_niveis_sem_o_item(qapp, services, restrito):
+    page = AnalysisPage(services)
+    page.refresh()
+    tabela = page.difficulty_table
+    b, c = linha(tabela, "B"), linha(tabela, "C")
+    assert cell(tabela, b, 1) == "30/50 (60,0%)" and cell(tabela, b, 3) == "—"
+    assert cell(tabela, c, 1) == "—" and cell(tabela, c, 2) == "—"
+    assert cell(tabela, c, 3) == "30/50 (60,0%)"
+    assert "obtido (— indica" in page.difficulty_note.text()
+
+
+def test_analise_exibe_alertas_de_cadastro(qapp, services, restrito, engine):
+    d, (a, a2, b, c) = restrito
+    apagar_associacoes(engine, a2.id)
+    page = AnalysisPage(services)
+    page.refresh()
+    assert "sem masmorras definidas" in page.status.text() and "A2" in page.status.text()

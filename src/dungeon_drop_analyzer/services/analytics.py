@@ -26,6 +26,7 @@ from dungeon_drop_analyzer.statistics import (
     holm_adjust,
     trend_test,
 )
+from dungeon_drop_analyzer.statistics.analysis import common_columns
 from dungeon_drop_analyzer.statistics.homogeneity import DEFAULT_N_SIM, DEFAULT_SEED
 from dungeon_drop_analyzer.statistics.proportions import DEFAULT_MIN_PER_DUNGEON
 
@@ -38,6 +39,8 @@ LIMITATION_NOTES = (
     "O teste supõe incursões independentes; sistemas de pity, recompensas rotativas, bônus "
     "temporários e atualizações podem violar essa hipótese.",
     "Resultado não significativo não prova igualdade entre as masmorras.",
+    "Cada item é comparado apenas entre as masmorras em que pode ser obtido; a distribuição "
+    "completa considera somente os itens disponíveis em todas as masmorras analisadas.",
 )
 
 
@@ -55,6 +58,15 @@ class ItemCount:
 
 
 @dataclass(frozen=True)
+class InconsistentRun:
+    """Incursões registradas com um item em masmorra fora do cadastro do item."""
+
+    dungeon: Dungeon
+    item: Item
+    count: int
+
+
+@dataclass(frozen=True)
 class DashboardData:
     total_runs: int
     distinct_items: int
@@ -65,6 +77,21 @@ class DashboardData:
     category_counts: dict[int, dict[str, int]]
     cells: dict[tuple[int, int], int]
     timeline: dict[str, list[tuple[date, int]]]
+    availability: dict[int, set[int]] = field(default_factory=dict)
+    undefined_items: list[Item] = field(default_factory=list)
+    inconsistent_runs: list[InconsistentRun] = field(default_factory=list)
+
+    def is_available(self, item_id: int, dungeon_id: int) -> bool:
+        allowed = self.availability.get(item_id)
+        return not allowed or dungeon_id in allowed
+
+
+@dataclass(frozen=True)
+class LevelGroup:
+    difficulty: int
+    x: int
+    n: int
+    dungeons: list[str]
 
 
 @dataclass(frozen=True)
@@ -72,6 +99,7 @@ class ItemTrend:
     item: Item
     result: TrendResult
     p_holm: float | None
+    groups: list[LevelGroup] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -95,18 +123,27 @@ class AnalysisReport:
     trends: list[ItemTrend]
     min_n: int
     alpha: float = ALPHA
+    availability: np.ndarray | None = field(default=None, repr=False)
+    common_items: list[Item] = field(default_factory=list)
+    undefined_items: list[Item] = field(default_factory=list)
+    inconsistent_runs: list[InconsistentRun] = field(default_factory=list)
 
     @property
     def analyzable(self) -> bool:
         return self.overall is not None
+
+    def is_available(self, dungeon_index: int, item_index: int) -> bool:
+        if self.availability is None:
+            return True
+        return bool(self.availability[dungeon_index, item_index])
 
 
 def interpret(p_value: float | None, alpha: float = ALPHA) -> str:
     """Texto de interpretação para um teste de igualdade entre masmorras."""
     if p_value is None:
         return (
-            "Teste indefinido: são necessárias ao menos duas masmorras com incursões e dois "
-            "itens distintos obtidos."
+            "Teste indefinido: são necessárias ao menos duas masmorras com incursões em que o "
+            "item (ou os itens comuns) possa ser obtido, e dois itens distintos obtidos."
         )
     if p_value < alpha:
         return (
@@ -117,6 +154,12 @@ def interpret(p_value: float | None, alpha: float = ALPHA) -> str:
         "Não foi detectada diferença estatisticamente significativa. "
         "Isso não prova que as distribuições sejam iguais."
     )
+
+
+def _allowed(item: Item, dungeon_id: int) -> bool:
+    """Item sem masmorras cadastradas é tratado como disponível em todas (a ser corrigido)."""
+    defined = {d.id for d in item.dungeons}
+    return not defined or dungeon_id in defined
 
 
 class AnalyticsService:
@@ -133,8 +176,20 @@ class AnalyticsService:
                 runs.timeline(flt),
             )
 
+    @staticmethod
+    def _inconsistent(dungeons, items, counts) -> list[InconsistentRun]:
+        dungeon_by_id = {d.id: d for d in dungeons}
+        item_by_id = {i.id: i for i in items}
+        found = [
+            InconsistentRun(dungeon_by_id[d], item_by_id[i], count)
+            for (d, i), count in counts.items()
+            if count > 0 and not _allowed(item_by_id[i], d)
+        ]
+        return sorted(found, key=lambda r: (r.item.name.casefold(), r.dungeon.name.casefold()))
+
     def dashboard(self, flt: RunFilter | None = None) -> DashboardData:
         dungeons, items, cells, timeline = self._load(flt)
+        counts = {(d, i): c for d, i, c in cells}
         by_dungeon: dict[int, int] = defaultdict(int)
         by_item: dict[int, int] = defaultdict(int)
         category_counts: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
@@ -145,12 +200,12 @@ class AnalyticsService:
             category_counts[dungeon_id][item_by_id[item_id].category] += count
         total = sum(by_dungeon.values())
 
+        shown = [item for item in items if item.is_active or by_item.get(item.id, 0) > 0]
         item_counts = [
             ItemCount(
                 item, by_item.get(item.id, 0), by_item.get(item.id, 0) / total if total else 0.0
             )
-            for item in items
-            if item.is_active or by_item.get(item.id, 0) > 0
+            for item in shown
         ]
         item_counts.sort(key=lambda c: (-c.count, c.item.name.casefold()))
         most: list[ItemCount] = []
@@ -181,8 +236,11 @@ class AnalyticsService:
             most_frequent=most,
             least_frequent=least,
             category_counts={k: dict(v) for k, v in category_counts.items()},
-            cells={(d, i): c for d, i, c in cells},
+            cells=counts,
             timeline=series,
+            availability={i.id: {d.id for d in i.dungeons} for i in items if i.dungeons},
+            undefined_items=[i for i in shown if not i.dungeons],
+            inconsistent_runs=self._inconsistent(dungeons, items, counts),
         )
 
     def analyze(
@@ -207,9 +265,13 @@ class AnalyticsService:
         matrix = np.array(
             [[counts.get((d.id, i.id), 0) for i in items] for d in dungeons], dtype=np.int64
         ).reshape(len(dungeons), len(items))
+        availability = np.array(
+            [[_allowed(i, d.id) for i in items] for d in dungeons], dtype=bool
+        ).reshape(len(dungeons), len(items))
 
         overall = None
         per_item: list[ItemAnalysis] = []
+        common: list[Item] = []
         if len(dungeons) >= 2 and len(items) >= 1:
             overall, per_item = analyze_items(
                 matrix,
@@ -218,7 +280,9 @@ class AnalyticsService:
                 min_n=min_n,
                 n_sim=n_sim,
                 seed=seed,
+                availability=availability,
             )
+            common = [items[j] for j in common_columns(availability)]
         levels, trends = self._trends(dungeons, items, counts, runs_per_dungeon)
         logger.info(
             "Análise executada: n=%s masmorras=%s itens=%s", sample, len(dungeons), len(items)
@@ -235,6 +299,10 @@ class AnalyticsService:
             trends=trends,
             min_n=min_n,
             alpha=alpha,
+            availability=availability,
+            common_items=common,
+            undefined_items=[i for i in items if not i.dungeons],
+            inconsistent_runs=self._inconsistent(all_dungeons, all_items, counts),
         )
 
     @staticmethod
@@ -251,17 +319,31 @@ class AnalyticsService:
             )
             for level, members in sorted(grouped.items())
         ]
-        scores = [row.difficulty for row in levels]
-        n = [row.runs for row in levels]
-        trends = [
-            ItemTrend(item, trend_test([row.counts[item.id] for row in levels], n, scores), None)
-            for item in items
-        ]
+        trends = []
+        for item in items:
+            groups = []
+            for level, members in sorted(grouped.items()):
+                allowed = [d for d in members if _allowed(item, d.id)]
+                if allowed:
+                    groups.append(
+                        LevelGroup(
+                            level,
+                            sum(counts.get((d.id, item.id), 0) for d in allowed),
+                            sum(runs_per_dungeon[d.id] for d in allowed),
+                            [d.name for d in allowed],
+                        )
+                    )
+            result = trend_test(
+                [g.x for g in groups], [g.n for g in groups], [g.difficulty for g in groups]
+            )
+            trends.append(ItemTrend(item, result, None, groups))
         defined = [k for k, t in enumerate(trends) if t.result.p_value is not None]
         adjusted = dict(
             zip(defined, holm_adjust([trends[k].result.p_value for k in defined]), strict=True)
         )
-        trends = [ItemTrend(t.item, t.result, adjusted.get(k)) for k, t in enumerate(trends)]
+        trends = [
+            ItemTrend(t.item, t.result, adjusted.get(k), t.groups) for k, t in enumerate(trends)
+        ]
         return levels, trends
 
 

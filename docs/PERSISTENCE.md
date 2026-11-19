@@ -28,6 +28,8 @@ convertidas. A exibição em formato local fica para a interface.
 - Migração `0002`: categorias padrão de itens (ver abaixo). Como o SQLite não adiciona constraints a tabelas
   existentes, ela recria `items`; por isso `upgrade_database`/`downgrade_database` desligam as foreign keys
   durante a migração, executam `PRAGMA foreign_key_check` ao final (falhando se houver violação) e religam.
+- Migração `0004`: tabela `item_dungeons` (masmorras em que cada item pode ser obtido). Itens existentes ficam
+  sem masmorras até serem editados manualmente (a migração não inventa associações).
 - Migração `0003`: categoria de item obrigatória (`NOT NULL` e CHECK sem `NULL`), com a mesma recriação de
   tabela e as mesmas verificações da `0002`.
 - Um teste garante que o esquema migrado é idêntico ao definido nos modelos, inclusive após a `0002` aplicada
@@ -53,6 +55,23 @@ com um rótulo padrão (sem diferenciar maiúsculas, plural/singular ou acentua�
 demais ficam sem categoria. A migração `0003` torna a coluna obrigatória e, se ainda houver itens sem
 categoria, aborta listando os nomes (sem alterar o banco); atribua uma categoria a eles e atualize novamente.
 Não havia dados reais antes desta mudança.
+
+## Masmorras do item
+
+Tabela de associação `item_dungeons(item_id, dungeon_id)` com PK composta, FKs `ON DELETE RESTRICT` e índice em
+`dungeon_id`. `Item.dungeons` (carregado junto com o item, ordenado por dificuldade e nome) é a lista de masmorras
+em que o item pode ser obtido.
+
+- `ItemService.create(nome, categoria, dungeon_ids, ...)` exige ao menos uma masmorra existente (ids repetidos são
+  unificados). `update(..., dungeon_ids=[...])` substitui o conjunto; omitir `dungeon_ids` não o altera, então itens
+  legados (sem masmorras) ainda podem ser inativados ou renomeados.
+- Remover uma masmorra do item é recusado se houver incursões desse item nela.
+- A trilha de auditoria do item inclui `dungeon_ids` nos dados antes e depois.
+- `RunService.register`/`update` recusam item fora das masmorras dele (mensagem com as masmorras do item). Item sem
+  masmorras definidas fica liberado até ser corrigido. Uma correção que não troca masmorra nem item não revalida
+  incursões antigas.
+- `ItemRepository.dungeon_map()` devolve `item_id → {dungeon_id}`; `RunRepository.count_item_in_dungeon()` apoia a
+  regra de remoção.
 
 ## Camadas
 

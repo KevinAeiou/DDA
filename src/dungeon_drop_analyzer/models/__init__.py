@@ -10,6 +10,7 @@ from .entities import (
     ItemCategory,
     Run,
     TriState,
+    item_dungeons,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "Run",
     "TriState",
     "UTCDateTime",
+    "item_dungeons",
 ]

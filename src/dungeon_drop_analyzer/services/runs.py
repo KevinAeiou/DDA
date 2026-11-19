@@ -69,6 +69,17 @@ class RunService:
             raise ValidationError(f"O item '{item.name}' está inativo.")
         return item
 
+    @staticmethod
+    def _check_availability(item: Item, dungeon: Dungeon) -> None:
+        """Itens com masmorras definidas só podem ser registrados nelas (sem definição = livre)."""
+        allowed = {d.id for d in item.dungeons}
+        if allowed and dungeon.id not in allowed:
+            names = ", ".join(d.name for d in item.dungeons)
+            raise ValidationError(
+                f"O item '{item.name}' não pode ser obtido na masmorra '{dungeon.name}'. "
+                f"Masmorras do item: {names}."
+            )
+
     def register(
         self,
         dungeon_id: int,
@@ -95,6 +106,7 @@ class RunService:
         with session_scope(self._factory) as session:
             dungeon = self._active_dungeon(session, dungeon_id)
             item = self._active_item(session, item_id)
+            self._check_availability(item, dungeon)
             run = RunRepository(session).add(
                 Run(dungeon=dungeon, item=item, created_at=now, updated_at=now, **values)
             )
@@ -126,10 +138,13 @@ class RunService:
             changed = {k: v for k, v in cleaned.items() if getattr(run, k) != v}
             if not changed:
                 return run
+            relation_changed = "dungeon_id" in changed or "item_id" in changed
             if "dungeon_id" in changed:
                 run.dungeon = self._active_dungeon(session, changed.pop("dungeon_id"))
             if "item_id" in changed:
                 run.item = self._active_item(session, changed.pop("item_id"))
+            if relation_changed:
+                self._check_availability(run.item, run.dungeon)
             for key, value in changed.items():
                 setattr(run, key, value)
             now = self._clock()

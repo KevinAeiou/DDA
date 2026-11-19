@@ -64,10 +64,18 @@ def _check_data(context: dict) -> str:
     services = context["services"]
     dungeons = [services.dungeons.create(f"Masmorra {i}", i) for i in range(1, 6)]
     categories = list(ItemCategory)
-    items = [services.items.create(f"Item {k}", categories[k % len(categories)]) for k in range(6)]
+    items = [
+        services.items.create(
+            f"Item {k}",
+            categories[k % len(categories)],
+            [d.id for d in dungeons] if k < 3 else [dungeons[k % 5].id, dungeons[(k + 1) % 5].id],
+        )
+        for k in range(6)
+    ]
     for index, dungeon in enumerate(dungeons):
         for k in range(12):
-            item = items[(k * (index + 1)) % len(items)]
+            available = [i for i in items if dungeon.id in {d.id for d in i.dungeons}]
+            item = available[(k * (index + 1)) % len(available)]
             services.runs.register(
                 dungeon.id,
                 item.id,

@@ -66,3 +66,28 @@ confundidas.
   mensagem de teste indefinido. A decisão sobre cada item usa o valor-p ajustado por Holm entre itens.
 - `LIMITATION_NOTES`: confusão masmorra × dificuldade, hipótese de independência e não significância não prova
   igualdade; exibidas na página de análise.
+
+## Disponibilidade do item por masmorra
+
+Cada item é obtido apenas nas masmorras cadastradas para ele (`D_i`; ver [PERSISTENCE.md](PERSISTENCE.md)). Onde
+o item não pode cair, a proporção é um zero estrutural e não uma observação; incluí-lo faria qualquer item
+exclusivo de uma masmorra parecer "diferente" por construção. As regras, implementadas em `analyze_items(...,
+availability=...)` e `AnalyticsService`:
+
+- **Denominador:** continua sendo o total de incursões da masmorra (`n_d`), inclusive as de outros itens.
+- **Teste por item:** tabela K×2 apenas com as masmorras de `D_i` presentes na amostra. Com uma só masmorra o teste
+  é `indefinido` (sem comparação), mas proporção e intervalo de Wilson continuam sendo calculados.
+- **Comparações pareadas, tamanhos de efeito e Holm por família:** somente entre pares de `D_i`.
+- **Holm entre itens:** a família contém apenas os itens com teste definido.
+- **Distribuição completa:** teste de homogeneidade restrito aos itens disponíveis em todas as masmorras analisadas
+  (distribuição condicional a eles; o resultado informa quantos itens entraram). Sem itens comuns, `indefinido`.
+- **Tendência por dificuldade:** para cada item, só entram os níveis em que ele pode ser obtido, e `n` do nível soma
+  apenas as masmorras de `D_i` naquele nível.
+- **Itens sem masmorras definidas** (cadastro anterior ao campo) são tratados como disponíveis em todas, com aviso.
+- **Incursões inconsistentes** (item registrado em masmorra fora de `D_i`, por exemplo porque o cadastro do item foi
+  alterado depois) são excluídas da análise daquele item, continuam contando no `n` da masmorra e são listadas em
+  um aviso. O serviço impede remover uma masmorra do item enquanto houver incursões dele nela, e impede registrar
+  novas incursões fora de `D_i`.
+
+`ItemAnalysis.dungeons` lista as masmorras consideradas em cada item, e `AnalysisReport` expõe a matriz de
+disponibilidade, os itens comuns, os itens sem masmorras definidas e as incursões inconsistentes.

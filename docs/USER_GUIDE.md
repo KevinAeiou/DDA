@@ -22,11 +22,18 @@ dados existentes não são movidos: crie um backup e restaure-o depois).
 
 1. **Masmorras:** cadastre as cinco masmorras com nome e dificuldade de 1 a 5.
 2. **Itens:** cadastre o catálogo de itens. Cada item pertence a uma das categorias padrão: armas, armaduras,
-   acessórios, relíquias, recursos de amplificação, recursos de artesanato, consumíveis e barras preciosas.
-3. **Registrar incursão:** escolha a masmorra e o item recebido e clique em "Salvar incursão". Em "Mais opções" é
+   acessórios, relíquias, recursos de amplificação, recursos de artesanato, consumíveis e barras preciosas, e informa
+   em quais masmorras pode ser obtido (uma ou mais). Exemplo: a Esfera de Aprimoramento de Defesa I em todas as
+   masmorras; a Capa do Mercenário apenas em Minas Abandonadas.
+3. **Registrar incursão:** escolha a masmorra (a lista de itens mostra só os que podem ser obtidos nela) e o item recebido e clique em "Salvar incursão". Em "Mais opções" é
    possível ajustar data/hora, duração, versão do jogo, bônus de drop, evento ativo e observações. Cada incursão
    concluída rende exatamente um item.
 4. **Histórico:** consulte, filtre, corrija ou exclua incursões. Correções e exclusões ficam registradas na auditoria.
+
+**Itens cadastrados antes do campo Masmorra:** edite cada um e marque as masmorras em que pode ser obtido. Enquanto
+isso não é feito, aparecem como "⚠ Não definidas", podem ser registrados em qualquer masmorra e são tratados como
+disponíveis em todas nos cálculos (o sistema avisa). Não é possível tirar uma masmorra do cadastro de um item que já
+tem incursões nela; corrija ou exclua essas incursões antes.
 
 Itens e masmorras não são excluídos; para tirá-los de uso, inative-os (o histórico é preservado).
 
@@ -41,6 +48,9 @@ Como interpretar:
 
 - "Não foi detectada diferença estatisticamente significativa" **não prova** que as masmorras sejam iguais.
 - Masmorra e dificuldade estão confundidas: uma diferença não prova que a dificuldade, sozinha, a causou.
+- Cada item é comparado apenas entre as masmorras em que pode ser obtido (onde ele não cai, o zero não é uma
+  observação). Um item exclusivo de uma masmorra não tem comparação, mas suas proporções aparecem. A distribuição
+  completa considera só os itens que podem ser obtidos em todas as masmorras analisadas.
 - Os testes supõem incursões independentes; sistemas de proteção contra azar, recompensas rotativas e bônus
   podem violar essa hipótese. Use os filtros de versão, bônus e evento para separar períodos diferentes.
 - Amostras abaixo de 50 incursões por masmorra são sinalizadas como insuficientes (valor de piloto, sem garantia

@@ -119,6 +119,19 @@ def _summary_frame(services: Services, flt, report, history_rows, exported_at) -
         )
         if overall.n_sim is not None:
             rows.append(("Simulações / semente", f"{overall.n_sim} / {overall.seed}"))
+    if report.undefined_items:
+        names = ", ".join(i.name for i in report.undefined_items)
+        rows.append(
+            ("Aviso: itens sem masmorras definidas (tratados como disponíveis em todas)", names)
+        )
+    if report.inconsistent_runs:
+        total = sum(r.count for r in report.inconsistent_runs)
+        rows.append(
+            (
+                "Aviso: incursões fora das masmorras do item (excluídas da análise do item)",
+                str(total),
+            )
+        )
     rows.append(("Filtros aplicados", "Nenhum" if not filters else ""))
     rows += [(f"  {label}", value) for label, value in filters]
     rows += [("Limitação", note) for note in LIMITATION_NOTES]

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QGroupBox, QLabel, QScrollArea, QVBoxLayout, QWidg
 from dungeon_drop_analyzer.models import ItemCategory
 from dungeon_drop_analyzer.services import Services
 from dungeon_drop_analyzer.services.analytics import DashboardData
-from dungeon_drop_analyzer.ui.widgets.analysis_format import fmt_pct
+from dungeon_drop_analyzer.ui.widgets.analysis_format import alert_text, fmt_pct
 from dungeon_drop_analyzer.ui.widgets.charts import (
     ChartCanvas,
     draw_bars,
@@ -34,6 +34,8 @@ class DashboardPage(Page):
         self.kpis.setWordWrap(True)
         self.notice = QLabel()
         self.notice.setWordWrap(True)
+        self.alerts = QLabel()
+        self.alerts.setWordWrap(True)
 
         self.dungeon_table = make_table(("Masmorra", "Dificuldade", "Incursões", "% do total"))
         self.dungeon_box = self._box("Incursões por masmorra", self.dungeon_table)
@@ -41,7 +43,9 @@ class DashboardPage(Page):
         self.frequency_label = QLabel()
         self.frequency_label.setWordWrap(True)
         self.item_chart = ChartCanvas(height=3.2)
-        self.item_table = make_table(("Item", "Categoria", "Obtenções", "% da amostra"))
+        self.item_table = make_table(
+            ("Item", "Categoria", "Masmorras", "Obtenções", "% da amostra")
+        )
         self.item_box = self._box(
             "Distribuição geral dos itens", self.frequency_label, self.item_chart, self.item_table
         )
@@ -61,6 +65,7 @@ class DashboardPage(Page):
         layout.addWidget(self.filters)
         layout.addWidget(self.kpis)
         layout.addWidget(self.notice)
+        layout.addWidget(self.alerts)
         for box in (self.dungeon_box, self.item_box, self.comparison_box, self.timeline_box):
             layout.addWidget(box)
         layout.addStretch()
@@ -102,6 +107,7 @@ class DashboardPage(Page):
             f"<b>Masmorras com dados:</b> {with_data}"
         )
         self.notice.setText("" if total else "Nenhuma incursão encontrada para os filtros atuais.")
+        self.alerts.setText(alert_text(data.undefined_items, data.inconsistent_runs))
         self._render_dungeons(data)
         self._render_items(data)
         self._render_comparison(data)
@@ -128,12 +134,27 @@ class DashboardPage(Page):
         fit_table_height(self.dungeon_table)
         self.dungeon_box.setTitle(f"Incursões por masmorra (n = {total})")
 
+    @staticmethod
+    def _dungeon_text(data: DashboardData, item_id: int) -> str:
+        ids = data.availability.get(item_id)
+        if not ids:
+            return "⚠ Não definidas"
+        if len(ids) == len(data.dungeon_counts):
+            return f"Todas ({len(ids)})"
+        return ", ".join(c.dungeon.name for c in data.dungeon_counts if c.dungeon.id in ids)
+
     def _render_items(self, data: DashboardData) -> None:
         total = data.total_runs
         rows = [
             (
                 c.item.id,
-                (c.item.name, format_category(c.item.category), str(c.count), fmt_pct(c.share)),
+                (
+                    c.item.name,
+                    format_category(c.item.category),
+                    self._dungeon_text(data, c.item.id),
+                    str(c.count),
+                    fmt_pct(c.share),
+                ),
             )
             for c in data.item_counts
         ]
@@ -193,7 +214,10 @@ class DashboardPage(Page):
             cells = [item_count.item.name]
             for c in with_data:
                 count = data.cells.get((c.dungeon.id, item_count.item.id), 0)
-                cells.append(f"{count} ({fmt_pct(count / c.runs)})")
+                if count == 0 and not data.is_available(item_count.item.id, c.dungeon.id):
+                    cells.append("—")
+                else:
+                    cells.append(f"{count} ({fmt_pct(count / c.runs)})")
             rows.append((item_count.item.id, tuple(cells)))
         fill_table(self.comparison_table, rows)
         fit_table_height(self.comparison_table)

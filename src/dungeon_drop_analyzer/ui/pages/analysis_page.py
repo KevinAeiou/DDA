@@ -16,6 +16,7 @@ from dungeon_drop_analyzer.services import Services
 from dungeon_drop_analyzer.services.analytics import LIMITATION_NOTES, AnalysisReport, interpret
 from dungeon_drop_analyzer.statistics import TestResult
 from dungeon_drop_analyzer.ui.widgets.analysis_format import (
+    alert_text,
     fmt_ci,
     fmt_num,
     fmt_pct,
@@ -167,6 +168,11 @@ class AnalysisPage(Page):
             f"{len(report.dungeons)} masmorra(s); {len(report.items)} item(ns) obtido(s). "
             f"Amostras abaixo de {report.min_n} incursões por masmorra são sinalizadas como "
             "insuficientes (valor de piloto, sem garantia de poder)."
+            + (
+                "<br>" + alert_text(report.undefined_items, report.inconsistent_runs)
+                if report.undefined_items or report.inconsistent_runs
+                else ""
+            )
         )
         current = self.item_combo.currentData()
         self.item_combo.blockSignals(True)
@@ -193,6 +199,7 @@ class AnalysisPage(Page):
         self.item_summary.setText(
             f"<b>Teste global de igualdade das proporções entre masmorras</b> "
             f"(família de {family} item(ns))<br>"
+            f"<b>Masmorras consideradas:</b> {', '.join(analysis.dungeons)}<br>"
             + test_summary(analysis.global_test, analysis.p_holm_across_items, report.alpha)
         )
         levels = {d.name: d.difficulty for d in report.dungeons}
@@ -245,23 +252,41 @@ class AnalysisPage(Page):
             fill_table(self.distribution_table, [])
             return
         overall = report.overall
+        common_names = [item.name for item in report.common_items]
+        scope = (
+            f"{len(report.dungeons)} masmorras × {len(common_names)} itens comuns"
+            if common_names
+            else "sem itens comuns a todas as masmorras"
+        )
         self.distribution_summary.setText(
-            "<b>Distribuição completa: masmorras × itens</b> "
-            f"(tabela {len(report.dungeons)}×{len(report.items)})<br>"
-            "H0: a distribuição dos itens é igual em todas as masmorras.<br>"
+            f"<b>Distribuição completa</b> (tabela {scope})<br>"
+            "H0: a distribuição dos itens é igual em todas as masmorras, considerando apenas os "
+            "itens que podem ser obtidos em todas as masmorras analisadas "
+            "(marcados com * na tabela; a distribuição é condicional a eles).<br>"
+            + (f"<b>Itens comuns:</b> {', '.join(common_names)}<br>" if common_names else "")
             + test_summary(overall, alpha=report.alpha)
         )
-        headers = ["Masmorra (n)"] + [item.name for item in report.items]
+        common_index = {item.id: k for k, item in enumerate(report.common_items)}
+        headers = ["Masmorra (n)"] + [
+            f"{item.name} *" if item.id in common_index else item.name for item in report.items
+        ]
         self.distribution_table.setColumnCount(len(headers))
         self.distribution_table.setHorizontalHeaderLabels(headers)
         expected = overall.expected
+        use_expected = expected is not None and expected.shape == (
+            len(report.dungeons),
+            len(report.common_items),
+        )
         rows = []
         for r, dungeon in enumerate(report.dungeons):
             cells = [f"{dungeon.name} ({report.runs_per_dungeon[dungeon.id]})"]
-            for c in range(len(report.items)):
+            for c, item in enumerate(report.items):
                 observed = int(report.matrix[r, c])
-                if expected is not None and expected.shape == report.matrix.shape:
-                    cells.append(f"{observed} (esp. {fmt_num(float(expected[r, c]), 1)})")
+                if observed == 0 and not report.is_available(r, c):
+                    cells.append("—")
+                elif item.id in common_index and use_expected:
+                    value = float(expected[r, common_index[item.id]])
+                    cells.append(f"{observed} (esp. {fmt_num(value, 1)})")
                 else:
                     cells.append(str(observed))
             rows.append((dungeon.id, tuple(cells)))
@@ -277,8 +302,9 @@ class AnalysisPage(Page):
         self.difficulty_note.setText(
             "<b>Proporção de cada item por nível de dificuldade</b> (masmorras do mesmo nível são "
             "agrupadas) e teste de tendência de Cochran-Armitage, <b>apenas exploratório</b>, com "
-            "valor-p ajustado por Holm entre itens. Associação não implica causalidade: masmorra e "
-            "dificuldade estão confundidas."
+            "valor-p ajustado por Holm entre itens. Cada item só considera os níveis em que "
+            "pode ser obtido (— indica nível sem a possibilidade do item). Associação não implica "
+            "causalidade: masmorra e dificuldade estão confundidas."
         )
         headers = ["Item"]
         for level in report.levels:
@@ -291,9 +317,13 @@ class AnalysisPage(Page):
         rows = []
         for trend in report.trends:
             cells = [trend.item.name]
+            by_level = {group.difficulty: group for group in trend.groups}
             for level in report.levels:
-                count = level.counts[trend.item.id]
-                cells.append(f"{count}/{level.runs} ({fmt_pct(count / level.runs)})")
+                group = by_level.get(level.difficulty)
+                if group is None:
+                    cells.append("—")
+                else:
+                    cells.append(f"{group.x}/{group.n} ({fmt_pct(group.x / group.n)})")
             result = trend.result
             cells += [
                 result.direction,

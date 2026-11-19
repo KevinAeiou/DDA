@@ -41,11 +41,13 @@ FREQUENCY_COLUMNS = [
     "ic95_inferior",
     "ic95_superior",
     "amostra_insuficiente",
+    "item_disponivel_na_masmorra",
 ]
 STATISTICS_COLUMNS = [
     "escopo",
     "item",
     "comparacao",
+    "masmorras_consideradas",
     "metodo",
     "amostra_n",
     "estatistica",
@@ -110,11 +112,19 @@ def history_frame(runs: Sequence[Run], exported_at: datetime) -> pd.DataFrame:
 
 
 def frequencies_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataFrame:
+    """Uma linha por masmorra × item em que o item pode ser obtido.
+
+    Combinações em que o item não está disponível não entram (zero estrutural), exceto se houver
+    incursões registradas nelas; nesse caso a linha aparece com `item_disponivel_na_masmorra` = Não.
+    """
     rows = []
     for r, dungeon in enumerate(report.dungeons):
         n = report.runs_per_dungeon[dungeon.id]
         for c, item in enumerate(report.items):
             x = int(report.matrix[r, c])
+            available = report.is_available(r, c)
+            if not available and x == 0:
+                continue
             interval = wilson_interval(x, n)
             rows.append(
                 {
@@ -128,6 +138,7 @@ def frequencies_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataF
                     "ic95_inferior": interval[0],
                     "ic95_superior": interval[1],
                     "amostra_insuficiente": "Sim" if n < report.min_n else "Não",
+                    "item_disponivel_na_masmorra": "Sim" if available else "Não",
                 }
             )
     return _stamp(pd.DataFrame(rows, columns=FREQUENCY_COLUMNS), exported_at)
@@ -159,9 +170,10 @@ def statistics_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataFr
             _test_row(
                 "Distribuição completa",
                 None,
-                f"{len(report.dungeons)} masmorras × {len(report.items)} itens",
+                f"{len(report.dungeons)} masmorras × {len(report.common_items)} itens comuns",
                 overall.method,
                 overall,
+                masmorras_consideradas=", ".join(d.name for d in report.dungeons),
                 interpretacao=interpret(overall.p_value, report.alpha),
                 notas=overall.rationale,
             )
@@ -173,9 +185,10 @@ def statistics_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataFr
                 _test_row(
                     "Item (global)",
                     analysis.item,
-                    f"{len(report.dungeons)} masmorras",
+                    f"{len(analysis.dungeons)} masmorras",
                     result.method,
                     result,
+                    masmorras_consideradas=", ".join(analysis.dungeons),
                     p_ajustado_holm=analysis.p_holm_across_items,
                     familia_holm=family,
                     interpretacao=interpret(analysis.p_holm_across_items, report.alpha),
@@ -193,6 +206,7 @@ def statistics_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataFr
                         analysis.item,
                         f"{pair.a} vs {pair.b}",
                         pair.method,
+                        masmorras_consideradas=f"{pair.a}, {pair.b}",
                         p_bruto=pair.p_raw,
                         p_ajustado_holm=pair.p_holm,
                         familia_holm=pair_family,
@@ -212,6 +226,9 @@ def statistics_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataFr
                 trend.item.name,
                 f"{result.groups} níveis; direção {result.direction}",
                 "Cochran-Armitage",
+                masmorras_consideradas=", ".join(
+                    name for group in trend.groups for name in group.dungeons
+                ),
                 amostra_n=result.n,
                 estatistica=result.z,
                 p_bruto=result.p_value,
@@ -224,16 +241,25 @@ def statistics_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataFr
 
 
 def distribution_frames(report: AnalysisReport) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Tabelas masmorras × itens (observado e esperado); vazias se não houver análise."""
+    """Observado (todos os itens; células sem disponibilidade ficam vazias) e esperado.
+
+    O esperado cobre apenas os itens comuns a todas as masmorras analisadas (base do teste).
+    """
     labels = [f"{d.name} (n={report.runs_per_dungeon[d.id]})" for d in report.dungeons]
-    columns = [item.name for item in report.items]
-    observed = pd.DataFrame(report.matrix, index=labels, columns=columns)
-    expected_values = (
-        report.overall.expected
-        if report.analyzable and report.overall.expected is not None
-        else np.full(report.matrix.shape, np.nan)
+    observed = pd.DataFrame(
+        report.matrix, index=labels, columns=[item.name for item in report.items], dtype=object
     )
-    expected = pd.DataFrame(np.round(expected_values, 4), index=labels, columns=columns)
+    for r in range(len(report.dungeons)):
+        for c in range(len(report.items)):
+            if not report.is_available(r, c) and report.matrix[r, c] == 0:
+                observed.iat[r, c] = None
+    common_names = [item.name for item in report.common_items]
+    shape = (len(report.dungeons), len(common_names))
+    expected_values = np.full(shape, np.nan)
+    if report.analyzable and report.overall.expected is not None:
+        if report.overall.expected.shape == shape:
+            expected_values = report.overall.expected
+    expected = pd.DataFrame(np.round(expected_values, 4), index=labels, columns=common_names)
     observed.index.name = expected.index.name = "masmorra"
     return observed.reset_index(), expected.reset_index()
 

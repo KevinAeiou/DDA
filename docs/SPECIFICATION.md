@@ -51,8 +51,9 @@ oferecem melhores recompensas: isso é uma hipótese a investigar.
 1.  Existem cinco masmorras com dificuldades ordenadas.
 2.  O jogador realiza as incursões sozinho.
 3.  Cada incursão concluída gera exatamente um item.
-4.  A lista de itens possíveis é conhecida e cada item pertence a uma das
-    oito categorias padrão (seção 3.1).
+4.  A lista de itens possíveis é conhecida; cada item pertence a uma das
+    oito categorias padrão (seção 3.1) e pode ser obtido em uma ou mais
+    masmorras (seção 3.2).
 5.  A seleção do item é manual.
 6.  Todos os itens serão analisados individualmente.
 7.  Cada incursão concluída é uma unidade de observação.
@@ -80,6 +81,21 @@ usuário apenas seleciona a categoria; não há categorias livres.
 | `precious_bars` | Barras preciosas |
 
 A categoria é obrigatória no cadastro do item.
+
+### 3.2 Masmorras em que cada item pode ser obtido
+
+Cada item informa em quais masmorras pode ser obtido (campo **Masmorra**,
+uma ou mais). Exemplos: a Esfera de Aprimoramento de Defesa I pode ser
+obtida em todas as masmorras; a Capa do Mercenário, apenas em Minas
+Abandonadas. Consequências:
+
+-   Uma incursão só pode ser registrada com um item disponível na
+    masmorra escolhida.
+-   Onde o item não pode cair, a proporção é um *zero estrutural* (não
+    uma observação de zero). Esses casos não entram nos testes (seções 7.3 a 7.5).
+-   Itens cadastrados antes desse campo ficam sem masmorras definidas até
+    serem editados manualmente. Enquanto isso, são tratados como
+    disponíveis em todas as masmorras e o sistema exibe um aviso.
 
 ### Limitações de interpretação
 
@@ -121,7 +137,11 @@ M1--M5.
 
 Permitir criar, consultar, editar e inativar: - Nome: obrigatório e
 único. - Categoria: obrigatória, escolhida entre as oito categorias padrão
-(seção 3.1). - Descrição: opcional. - Ativo: sim/não.
+(seção 3.1). - Masmorra(s): obrigatória, uma ou mais masmorras em que
+o item pode ser obtido (seção 3.2). - Descrição: opcional. - Ativo: sim/não.
+
+Não remover uma masmorra do cadastro do item se houver incursões desse
+item nela.
 
 Itens inativos permanecem associados ao histórico. Não excluir em
 cascata itens já utilizados.
@@ -136,7 +156,8 @@ sim/não/desconhecido. - Observações: opcional.
 
 Regras: - Uma incursão concluída possui exatamente uma recompensa. - Não
 salvar incursão concluída sem item. - Não permitir mais de um item na
-mesma incursão. - Salvar em transação. - Exibir feedback de sucesso ou
+mesma incursão. - O item deve poder ser obtido na masmorra escolhida
+(seção 3.2). - Salvar em transação. - Exibir feedback de sucesso ou
 erro.
 
 ### RF-04 --- Histórico
@@ -215,7 +236,8 @@ masmorra. - `x_id`: quantidade de vezes que o item `i` foi obtido na
 masmorra. - `p_hat(i,d) = x_id / n_d`: proporção observada.
 
 O denominador inclui todas as incursões válidas da masmorra, inclusive
-as que resultaram em outros itens.
+as que resultaram em outros itens. A proporção de um item só é
+definida nas masmorras em que ele pode ser obtido (`D_i`, seção 3.2).
 
 ### 7.2 Intervalos de confiança
 
@@ -233,14 +255,22 @@ adequadas. Para tabelas esparsas, usar teste exato de
 Fisher-Freeman-Halton ou procedimento Monte Carlo apropriado para tabela
 R×C.
 
+Como há itens exclusivos de algumas masmorras, o teste usa apenas os
+itens disponíveis em todas as masmorras analisadas (distribuição
+condicional a esses itens), evitando que os zeros estruturais
+produzam diferenças triviais. Sem itens comuns, o teste é indefinido.
+
 Documentar o critério de escolha. Não aplicar limite simplista sem
 inspecionar frequências esperadas. Relatar quantidade de simulações e
 semente aleatória para reprodutibilidade.
 
 ### 7.4 Teste individual por item
 
-Para cada item, montar tabela 5×2 (obtido/não obtido) e testar igualdade
-das cinco proporções. Usar qui-quadrado quando adequado e alternativa
+Para cada item, montar tabela K×2 (obtido/não obtido), com uma linha por
+masmorra em que o item pode ser obtido (`D_i`), e testar igualdade das
+proporções entre elas. Item disponível em uma única masmorra não tem
+comparação entre masmorras (teste indefinido; as proporções e os
+intervalos continuam sendo exibidos). Usar qui-quadrado quando adequado e alternativa
 exata/Monte Carlo quando necessário.
 
 Como vários itens serão testados, ajustar os valores-p dos testes por
@@ -248,7 +278,8 @@ item usando Holm. Informar valores-p bruto e ajustado.
 
 ### 7.5 Comparações pareadas
 
-Após diferença global por item, comparar pares de masmorras usando teste
+Após diferença global por item, comparar pares de masmorras (apenas
+entre as de `D_i`) usando teste
 de duas proporções ou método exato apropriado. Aplicar Holm dentro da
 família de comparações daquele item. Informar claramente a família
 ajustada.
@@ -304,6 +335,12 @@ inválida e exige análise específica.
 -   `is_active`: booleano.
 -   `created_at`, `updated_at`.
 
+### `item_dungeons`
+
+-   `item_id`, `dungeon_id`: PK composta; FKs com `ON DELETE RESTRICT`.
+-   Associação muitos-para-muitos: masmorras em que o item pode ser
+    obtido. Índice em `dungeon_id`.
+
 ### `runs`
 
 -   `id`: PK.
@@ -332,6 +369,9 @@ inválida e exige análise específica.
 -   Índices em `completed_at`, `dungeon_id`, `item_id`.
 -   Uma única FK `item_id` em `runs` garante uma recompensa por
     registro.
+-   A combinação item × masmorra de uma incursão deve constar em
+    `item_dungeons` (validada pelo serviço, não por constraint, para
+    preservar histórico anterior ao cadastro das masmorras).
 -   Migrações versionadas.
 
 ## 9. Arquitetura técnica
