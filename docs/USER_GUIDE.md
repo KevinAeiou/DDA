@@ -32,7 +32,8 @@ dados existentes não são movidos: crie um backup e restaure-o depois).
 
 **Itens cadastrados antes do campo Masmorra:** edite cada um e marque as masmorras em que pode ser obtido. Enquanto
 isso não é feito, aparecem como "⚠ Não definidas", podem ser registrados em qualquer masmorra e são tratados como
-disponíveis em todas nos cálculos (o sistema avisa). Não é possível tirar uma masmorra do cadastro de um item que já
+disponíveis em todas nos cálculos (o sistema avisa). Masmorras inativas não aparecem na lista (reative-a em Masmorras para vinculá-la a itens; vínculos antigos são
+mantidos). Não é possível tirar uma masmorra do cadastro de um item que já
 tem incursões nela; corrija ou exclua essas incursões antes.
 
 Itens e masmorras não são excluídos; para tirá-los de uso, inative-os (o histórico é preservado).

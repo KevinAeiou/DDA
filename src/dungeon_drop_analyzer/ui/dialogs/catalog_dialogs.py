@@ -67,6 +67,12 @@ class DungeonDialog(FormDialog):
 
 
 class ItemDialog(FormDialog):
+    """Cadastro/edição de item.
+
+    A lista de masmorras recebida é a exibida (o chamador passa só as ativas). Vínculos já
+    existentes com masmorras que não estão na lista são preservados ao salvar.
+    """
+
     def __init__(
         self,
         service: ItemService,
@@ -76,6 +82,7 @@ class ItemDialog(FormDialog):
     ) -> None:
         self._service = service
         self._item = item
+        self._listed_ids = {d.id for d in dungeons}
         content = QWidget()
         form = QFormLayout(content)
         self.name = QLineEdit()
@@ -144,6 +151,9 @@ class ItemDialog(FormDialog):
             "is_active": self.active.isChecked(),
         }
         dungeon_ids = self.checked_dungeon_ids()
+        if self._item is not None:
+            hidden = sorted({d.id for d in self._item.dungeons} - self._listed_ids)
+            dungeon_ids += hidden
         if self._item is None:
             self._service.create(dungeon_ids=dungeon_ids, **values)
         else:

@@ -66,6 +66,8 @@ em que o item pode ser obtido.
   unificados). `update(..., dungeon_ids=[...])` substitui o conjunto; omitir `dungeon_ids` não o altera, então itens
   legados (sem masmorras) ainda podem ser inativados ou renomeados.
 - Remover uma masmorra do item é recusado se houver incursões desse item nela.
+- Novos vínculos só podem ser feitos com masmorras ativas (`ValidationError` para as inativas); vínculos já
+  existentes com uma masmorra depois inativada continuam válidos e podem ser mantidos nas edições.
 - A trilha de auditoria do item inclui `dungeon_ids` nos dados antes e depois.
 - `RunService.register`/`update` recusam item fora das masmorras dele (mensagem com as masmorras do item). Item sem
   masmorras definidas fica liberado até ser corrigido. Uma correção que não troca masmorra nem item não revalida

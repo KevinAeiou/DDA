@@ -380,3 +380,26 @@ def test_resumo_do_xlsx_avisa_sobre_itens_sem_masmorras(services, restrito, engi
     ]
     avisos = [valor for campo, valor in linhas if campo and campo.startswith("Aviso: itens sem")]
     assert avisos == ["A2"]
+
+
+def test_item_nao_pode_ser_criado_com_masmorra_inativa(mapa, dungeons):
+    d, items = mapa
+    dungeons.set_active(d[1].id, False)
+    with pytest.raises(ValidationError, match="Masmorra 2.*inativa"):
+        items.create("Capa", "armor", [d[0].id, d[1].id])
+    assert items.list() == []
+
+
+def test_nao_vincula_masmorra_inativa_na_edicao_mas_preserva_vinculos_existentes(mapa, dungeons):
+    d, items = mapa
+    item = items.create("Capa", "armor", [d[0].id, d[1].id])
+    dungeons.set_active(d[1].id, False)
+    dungeons.set_active(d[2].id, False)
+    with pytest.raises(ValidationError, match="Masmorra 3.*inativa"):
+        items.update(item.id, dungeon_ids=[d[0].id, d[1].id, d[2].id])
+    assert nomes(items.get(item.id)) == ["Masmorra 1", "Masmorra 2"]
+    mantido = items.update(item.id, name="Capa 2", dungeon_ids=[d[0].id, d[1].id])
+    assert mantido.name == "Capa 2" and nomes(mantido) == ["Masmorra 1", "Masmorra 2"]
+    dungeons.set_active(d[2].id, True)
+    ampliado = items.update(item.id, dungeon_ids=[d[0].id, d[1].id, d[2].id])
+    assert len(ampliado.dungeons) == 3

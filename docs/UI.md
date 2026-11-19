@@ -29,7 +29,8 @@ ficam no diretório de dados descrito em [PERSISTENCE.md](PERSISTENCE.md).
 ## Itens, categorias e masmorras
 
 No cadastro e na edição de item há também a lista **Masmorra(s)** (marcação múltipla, com os botões "Todas" e
-"Nenhuma"): ao menos uma é obrigatória. Exemplo: a Esfera de Aprimoramento de Defesa I em todas as masmorras e a
+"Nenhuma"): ao menos uma é obrigatória. Masmorras inativas não são listadas; se o item já estiver vinculado a uma delas, o
+vínculo é mantido ao salvar (a edição não o remove). Exemplo: a Esfera de Aprimoramento de Defesa I em todas as masmorras e a
 Capa do Mercenário apenas em Minas Abandonadas. A página de itens mostra a coluna Masmorras ("Todas (N)", os
 nomes ou "⚠ Não definidas" para itens antigos), filtra por masmorra e avisa quantos itens estão sem definição.
 

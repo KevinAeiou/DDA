@@ -211,6 +211,11 @@ class ItemService(_CatalogService):
         current = {d.id for d in entity.dungeons}
         if current == set(wanted_ids):
             return False
+        for dungeon in dungeons:
+            if dungeon.id not in current and not dungeon.is_active:
+                raise ValidationError(
+                    f"A masmorra '{dungeon.name}' está inativa e não pode ser vinculada ao item."
+                )
         runs = RunRepository(session)
         for removed in sorted(current - set(wanted_ids)):
             count = runs.count_item_in_dungeon(entity.id, removed)

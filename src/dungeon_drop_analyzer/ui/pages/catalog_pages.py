@@ -202,7 +202,9 @@ class ItemsPage(_CatalogPage):
         )
 
     def _dialog(self, entity=None):
-        return ItemDialog(self.services.items, self.services.dungeons.list(), entity, self)
+        return ItemDialog(
+            self.services.items, self.services.dungeons.list(active_only=True), entity, self
+        )
 
     def _service(self):
         return self.services.items
