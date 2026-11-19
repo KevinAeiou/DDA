@@ -137,6 +137,7 @@ def _check_interface(context: dict) -> str:
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     from PySide6.QtWidgets import QApplication
 
+    from dungeon_drop_analyzer.ui.app_icon import load_app_icon
     from dungeon_drop_analyzer.ui.pages import AnalysisPage, DashboardPage
     from dungeon_drop_analyzer.ui.windows import MainWindow
 
@@ -156,8 +157,10 @@ def _check_interface(context: dict) -> str:
     if not isinstance(analysis, AnalysisPage) or analysis.item_combo.count() == 0:
         raise RuntimeError("A análise estatística não listou itens.")
     dashboard.item_chart.draw()
+    if load_app_icon().isNull():
+        raise RuntimeError("O ícone do aplicativo não foi encontrado.")
     window.close()
-    return f"{rendered} páginas renderizadas, gráficos desenhados"
+    return f"{rendered} páginas renderizadas, gráficos desenhados, ícone carregado"
 
 
 STEPS: tuple[tuple[str, Callable[[dict], str]], ...] = (

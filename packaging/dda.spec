@@ -8,6 +8,7 @@ from PyInstaller.utils.hooks import collect_submodules
 root = Path(SPECPATH).parent
 source = root / "src"
 migrations = source / "dungeon_drop_analyzer" / "migrations"
+resources = source / "dungeon_drop_analyzer" / "resources"
 
 hidden_imports = collect_submodules("alembic") + [
     "sqlalchemy.dialects.sqlite",
@@ -46,6 +47,12 @@ analysis.datas += Tree(
     excludes=["__pycache__", "*.pyc"],
 )
 
+analysis.datas += Tree(
+    str(resources),
+    prefix="dungeon_drop_analyzer/resources",
+    excludes=["*.svg"],
+)
+
 archive = PYZ(analysis.pure)
 
 executable = EXE(
@@ -54,6 +61,7 @@ executable = EXE(
     [],
     exclude_binaries=True,
     name="DungeonDropAnalyzer",
+    icon=str(resources / "icon.ico"),
     console=False,
     upx=False,
     disable_windowed_traceback=False,

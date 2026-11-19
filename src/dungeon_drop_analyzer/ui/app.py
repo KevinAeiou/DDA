@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 from dungeon_drop_analyzer.core.bootstrap import initialize
 from dungeon_drop_analyzer.core.config import Settings
 from dungeon_drop_analyzer.services import Services
+from dungeon_drop_analyzer.ui.app_icon import load_app_icon, set_windows_app_id
 from dungeon_drop_analyzer.ui.widgets.messages import APP_TITLE
 from dungeon_drop_analyzer.ui.windows import MainWindow
 
@@ -30,8 +31,10 @@ def configure_locale(app: QApplication) -> list[QTranslator]:
 
 
 def run(argv: list[str] | None = None) -> int:
+    set_windows_app_id()
     app = QApplication.instance() or QApplication(argv if argv is not None else sys.argv)
     app.setApplicationName(APP_TITLE)
+    app.setWindowIcon(load_app_icon())
     configure_locale(app)
     settings = Settings.load()
     try:
