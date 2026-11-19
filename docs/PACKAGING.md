@@ -62,8 +62,20 @@ de trabalho diferente e ambiente mínimo (somente `System32` no `PATH`, sem Pyth
 - **Versão mínima do Windows:** não validada além do Windows 11. O Qt 6 e o Python 3.11 miram Windows 10 ou
   superior (64 bits); trate isso como a expectativa até haver teste.
 - **Sem assinatura digital:** o Windows SmartScreen e alguns antivírus podem alertar sobre o executável.
-- **Sem ícone nem metadados de versão do Windows** no `.exe`.
+- **Sem metadados de versão do Windows** no `.exe` (o ícone existe; veja a seção abaixo).
 - **Tamanho e partida:** o pacote é grande e a primeira abertura é lenta; reduzir exigiria importações sob demanda
   das bibliotecas científicas.
 - **Dados reais:** a restauração e a troca de diretório já funcionam, mas a primeira instalação deve ser
   acompanhada de um backup antes de atualizar para versões futuras do aplicativo.
+
+## Ícone
+
+- Fontes em `src/dungeon_drop_analyzer/resources/`: `icon.svg` (256, 128, 64 e 48 px), `icon-medio.svg` (32 e 24 px) e
+  `icon-pequeno.svg` (16 px). Os tamanhos pequenos têm menos detalhes para continuar legíveis.
+- `python scripts/build_icon.py` renderiza os SVGs com o Qt e gera `icon.ico` (multitamanho, PNG embutido) e os
+  `icon-16.png`, `icon-32.png` e `icon-256.png`. Rode-o ao alterar um SVG e versione os arquivos gerados.
+- O `.ico` é o ícone do `.exe` (`icon=` em `packaging/dda.spec`); os PNGs são usados pela janela
+  (`ui/app_icon.py`, aplicado em `QApplication.setWindowIcon`). A pasta `resources` vai para o pacote sem os SVGs.
+- No Windows, `SetCurrentProcessExplicitAppUserModelID` agrupa a janela sob o ícone do aplicativo na barra de tarefas.
+- A autoverificação confere que o ícone carrega. O desenho é o conceito "Portal de barras": arco de porta, cinco barras
+  (uma por masmorra) e uma destacada com barra de erro.
