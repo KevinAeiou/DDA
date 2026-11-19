@@ -2,12 +2,24 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from dungeon_drop_analyzer.services import Services
 from dungeon_drop_analyzer.ui.dialogs import DungeonDialog, ItemDialog
 from dungeon_drop_analyzer.ui.widgets.category_combo import make_category_combo
-from dungeon_drop_analyzer.ui.widgets.formatting import format_bool, format_category
+from dungeon_drop_analyzer.ui.widgets.formatting import (
+    format_bool,
+    format_category,
+    format_item_dungeons,
+)
 from dungeon_drop_analyzer.ui.widgets.messages import guarded, show_error
 
 from .base import Page, fill_table, make_table, selected_id
@@ -56,6 +68,9 @@ class _CatalogPage(Page):
     def _extra_match(self, entity) -> bool:
         return True
 
+    def _warning(self) -> str:
+        return ""
+
     def _entities(self) -> list:
         raise NotImplementedError
 
@@ -75,7 +90,7 @@ class _CatalogPage(Page):
         ]
         fill_table(self.table, [(e.id, self._row(e)) for e in entities])
         total = len(self._entities())
-        self.summary.setText(f"{len(entities)} de {total} registro(s) exibido(s).")
+        self.summary.setText(f"{len(entities)} de {total} registro(s) exibido(s).{self._warning()}")
 
     def _open_dialog(self, entity=None) -> bool:
         dialog = self._dialog(entity)
@@ -132,32 +147,62 @@ class DungeonsPage(_CatalogPage):
 
 class ItemsPage(_CatalogPage):
     title = "Itens"
-    headers = ("Nome", "Categoria", "Descrição", "Ativo")
+    headers = ("Nome", "Categoria", "Masmorras", "Descrição", "Ativo")
     singular = "Item"
     new_label = "Novo item"
 
     def _extra_filters(self) -> list[QWidget]:
         self.category_filter = make_category_combo(empty_label="Todas as categorias")
         self.category_filter.currentIndexChanged.connect(lambda _: self.refresh())
-        return [self.category_filter]
+        self.dungeon_filter = QComboBox()
+        self.dungeon_filter.addItem("Todas as masmorras", None)
+        self.dungeon_filter.currentIndexChanged.connect(lambda _: self.refresh())
+        return [self.category_filter, self.dungeon_filter]
+
+    def _reload_dungeon_filter(self) -> None:
+        current = self.dungeon_filter.currentData()
+        self.dungeon_filter.blockSignals(True)
+        self.dungeon_filter.clear()
+        self.dungeon_filter.addItem("Todas as masmorras", None)
+        for dungeon in self.services.dungeons.list():
+            self.dungeon_filter.addItem(dungeon.name, dungeon.id)
+        self.dungeon_filter.setCurrentIndex(max(self.dungeon_filter.findData(current), 0))
+        self.dungeon_filter.blockSignals(False)
+
+    def refresh(self) -> None:
+        self._reload_dungeon_filter()
+        super().refresh()
 
     def _extra_match(self, entity) -> bool:
         selected = self.category_filter.currentData()
-        return selected is None or entity.category == selected
+        if selected is not None and entity.category != selected:
+            return False
+        dungeon_id = self.dungeon_filter.currentData()
+        return dungeon_id is None or dungeon_id in {d.id for d in entity.dungeons}
 
     def _entities(self) -> list:
         return self.services.items.list()
+
+    def _warning(self) -> str:
+        undefined = sum(1 for i in self._entities() if not i.dungeons)
+        if not undefined:
+            return ""
+        return (
+            f" ⚠ {undefined} item(ns) sem masmorras definidas: edite o cadastro para informar "
+            "onde cada um pode ser obtido."
+        )
 
     def _row(self, i) -> tuple[str, ...]:
         return (
             i.name,
             format_category(i.category),
+            format_item_dungeons(i, len(self.services.dungeons.list())),
             i.description or "",
             format_bool(i.is_active),
         )
 
     def _dialog(self, entity=None):
-        return ItemDialog(self.services.items, entity, self)
+        return ItemDialog(self.services.items, self.services.dungeons.list(), entity, self)
 
     def _service(self):
         return self.services.items

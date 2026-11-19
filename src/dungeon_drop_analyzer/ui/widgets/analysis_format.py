@@ -45,3 +45,26 @@ METHOD_LABELS = {
 
 def method_label(method: str) -> str:
     return METHOD_LABELS.get(method, method)
+
+
+def alert_text(undefined_items, inconsistent_runs) -> str:
+    """Avisos sobre cadastro incompleto e incursões incompatíveis com as masmorras do item."""
+    lines: list[str] = []
+    if undefined_items:
+        names = ", ".join(item.name for item in undefined_items)
+        lines.append(
+            "⚠ Itens sem masmorras definidas (tratados como disponíveis em todas as masmorras; "
+            f"edite o cadastro): {names}."
+        )
+    if inconsistent_runs:
+        total = sum(entry.count for entry in inconsistent_runs)
+        detail = "; ".join(
+            f"{entry.item.name} em {entry.dungeon.name} ({entry.count})"
+            for entry in inconsistent_runs[:5]
+        )
+        more = " …" if len(inconsistent_runs) > 5 else ""
+        lines.append(
+            f"⚠ {total} incursão(ões) registrada(s) com item fora das masmorras do seu cadastro, "
+            f"excluídas da análise do item: {detail}{more}."
+        )
+    return "<br>".join(lines)

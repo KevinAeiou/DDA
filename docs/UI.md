@@ -26,10 +26,21 @@ ficam no diretório de dados descrito em [PERSISTENCE.md](PERSISTENCE.md).
   em pt-BR e caixas de mensagem.
 - A interface só usa `Services`; não contém fórmulas estatísticas nem acessa o banco.
 
-## Itens e categorias
+## Itens, categorias e masmorras
+
+No cadastro e na edição de item há também a lista **Masmorra(s)** (marcação múltipla, com os botões "Todas" e
+"Nenhuma"): ao menos uma é obrigatória. Exemplo: a Esfera de Aprimoramento de Defesa I em todas as masmorras e a
+Capa do Mercenário apenas em Minas Abandonadas. A página de itens mostra a coluna Masmorras ("Todas (N)", os
+nomes ou "⚠ Não definidas" para itens antigos), filtra por masmorra e avisa quantos itens estão sem definição.
 
 No cadastro e na edição de item, a categoria é escolhida em uma lista com as oito categorias padrão, obrigatória e sem seleção inicial; não há campo de texto livre. A página de itens exibe o rótulo da categoria e permite filtrar
 por categoria combinado com o filtro por nome.
+
+## Registro por masmorra
+
+Ao escolher a masmorra, a lista de itens passa a mostrar só os que podem ser obtidos nela (mais os itens ainda sem
+masmorras definidas). Sem itens para a masmorra, a página orienta a editar o cadastro do item. O serviço valida de
+novo ao salvar.
 
 ## Dashboard
 
@@ -38,7 +49,9 @@ mostra o tamanho da amostra (`n`). Conteúdo: totais (amostra, itens distintos, 
 por masmorra, distribuição geral dos itens (gráfico dos 15 mais frequentes, tabela completa e texto com o item
 mais e o menos frequente, indicando empates e itens nunca obtidos), comparação por masmorra (proporção por
 categoria em barras empilhadas e tabela item × masmorra com contagem e percentual) e evolução temporal
-(incursões acumuladas por masmorra). Sem dados, os gráficos mostram "Sem dados para exibir".
+(incursões acumuladas por masmorra). Sem dados, os gráficos mostram "Sem dados para exibir". A tabela de itens
+mostra as masmorras de cada item, a tabela item × masmorra exibe "—" onde o item não pode ser obtido, e um aviso
+lista itens sem masmorras definidas e incursões fora das masmorras do item.
 
 ## Análise estatística
 
@@ -50,6 +63,9 @@ Três abas sobre o mesmo relatório, com os filtros da página (sem filtro de it
   bruto e ajustado dentro da família do item, diferença em p.p., razão e odds ratio com IC.
 - **Distribuição completa:** tabela masmorras × itens com contagem observada e esperada, teste de homogeneidade,
   método, amostra, simulações e interpretação.
+- Em todas as abas, cada item é comparado apenas entre as masmorras em que pode ser obtido ("Masmorras
+  consideradas"); a distribuição completa usa só os itens comuns (marcados com `*`) e células indisponíveis
+  aparecem como "—". Os mesmos avisos de cadastro aparecem no topo da página.
 - **Dificuldade (exploratória):** proporção de cada item por nível e teste de tendência de Cochran-Armitage com
   Holm entre itens, com o aviso de que associação não implica causalidade.
 

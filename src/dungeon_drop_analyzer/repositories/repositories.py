@@ -10,7 +10,7 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, joinedload
 
 from dungeon_drop_analyzer.core.timeutils import to_utc
-from dungeon_drop_analyzer.models import AuditLog, Dungeon, Item, Run
+from dungeon_drop_analyzer.models import AuditLog, Dungeon, Item, Run, item_dungeons
 
 
 class DungeonRepository:
@@ -49,6 +49,15 @@ class ItemRepository:
 
     def get_by_name(self, name: str) -> Item | None:
         return self.session.scalars(select(Item).where(Item.name == name)).first()
+
+    def dungeon_map(self) -> dict[int, set[int]]:
+        """Masmorras cadastradas para cada item (itens sem masmorras definidas ficam ausentes)."""
+        mapping: dict[int, set[int]] = {}
+        for item_id, dungeon_id in self.session.execute(
+            select(item_dungeons.c.item_id, item_dungeons.c.dungeon_id)
+        ):
+            mapping.setdefault(item_id, set()).add(dungeon_id)
+        return mapping
 
     def list(self, active_only: bool = False) -> list[Item]:
         stmt = select(Item).order_by(Item.name)
@@ -139,6 +148,12 @@ class RunRepository:
     def timeline(self, flt: RunFilter | None = None) -> list[tuple[datetime, int]]:
         stmt = self._apply(select(Run.completed_at, Run.dungeon_id), flt)
         return [(when, dungeon_id) for when, dungeon_id in self.session.execute(stmt)]
+
+    def count_item_in_dungeon(self, item_id: int, dungeon_id: int) -> int:
+        stmt = select(func.count(Run.id)).where(
+            Run.item_id == item_id, Run.dungeon_id == dungeon_id
+        )
+        return int(self.session.scalar(stmt) or 0)
 
     def distinct_game_versions(self) -> list[str]:
         stmt = (

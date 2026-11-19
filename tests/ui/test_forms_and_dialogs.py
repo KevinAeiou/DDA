@@ -83,11 +83,13 @@ def test_dialogo_de_masmorra_cria_edita_e_mantem_aberto_em_erro(qapp, services, 
 
 
 def test_dialogo_de_item_nome_vazio_gera_aviso(qapp, services, dialogs):
-    dialog = ItemDialog(services.items)
+    masmorra = services.dungeons.create("Base", 1)
+    dialog = ItemDialog(services.items, services.dungeons.list())
     dialog.accept()
     assert dialogs.errors and "obrigatório" in dialogs.errors[-1]
     dialog.name.setText("Anel")
     dialog.category.setCurrentIndex(dialog.category.findData("accessories"))
+    dialog.set_checked_dungeons({masmorra.id})
     dialog.accept()
     item = services.items.list()[0]
     assert (item.name, item.category) == ("Anel", "accessories")
@@ -119,7 +121,8 @@ def test_dialogo_de_correcao_mantem_item_inativo_do_registro(qapp, services, see
 
 
 def test_dialogo_de_item_lista_as_oito_categorias_e_exige_selecao(qapp, services, dialogs):
-    dialog = ItemDialog(services.items)
+    masmorra = services.dungeons.create("Base", 1)
+    dialog = ItemDialog(services.items, services.dungeons.list())
     rotulos = [dialog.category.itemText(i) for i in range(dialog.category.count())]
     assert rotulos == [
         "Armas",
@@ -138,12 +141,17 @@ def test_dialogo_de_item_lista_as_oito_categorias_e_exige_selecao(qapp, services
     assert services.items.list() == []
     dialog.category.setCurrentIndex(dialog.category.findData("consumables"))
     dialog.accept()
+    assert "masmorra" in dialogs.errors[-1].lower()
+    assert services.items.list() == []
+    dialog.set_checked_dungeons({masmorra.id})
+    dialog.accept()
     assert services.items.list()[0].category == "consumables"
 
 
 def test_dialogo_de_item_edita_categoria(qapp, services):
-    item = services.items.create("Barra", category="crafting_resources")
-    dialog = ItemDialog(services.items, item)
+    masmorra = services.dungeons.create("Base", 1)
+    item = services.items.create("Barra", "crafting_resources", [masmorra.id])
+    dialog = ItemDialog(services.items, services.dungeons.list(), item)
     assert dialog.category.currentData() == "crafting_resources"
     dialog.category.setCurrentIndex(dialog.category.findData("precious_bars"))
     dialog.accept()

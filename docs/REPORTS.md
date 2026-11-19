@@ -12,13 +12,15 @@ arquivos saem só com o cabeçalho.
 | Arquivo | Conteúdo |
 |---|---|
 | Histórico (CSV) | uma linha por incursão, do mais antigo ao mais recente: id, data/hora local e UTC, masmorra, dificuldade, item, categoria, duração, versão, bônus, evento e observações |
-| Frequências e proporções (CSV) | por masmorra × item: obtenções, incursões da masmorra, proporção, IC de Wilson 95% e sinalização de amostra insuficiente |
-| Resultados estatísticos (CSV) | distribuição completa, testes globais por item, comparações pareadas (com diferença em p.p., razão e odds ratio com IC), tendência por dificuldade; sempre com método, amostra, estatística, graus de liberdade, valor-p bruto e ajustado (Holm), família do ajuste, simulações, semente, interpretação e notas |
-| Relatório consolidado (XLSX) | abas Resumo (versão, data/hora, amostra, filtros, parâmetros e limitações), Histórico, Frequências, Resultados estatísticos, Distribuição observada e Distribuição esperada |
+| Frequências e proporções (CSV) | por masmorra × item **em que o item pode ser obtido**: obtenções, incursões da masmorra, proporção, IC de Wilson 95%, sinalização de amostra insuficiente e `item_disponivel_na_masmorra` (combinações indisponíveis só aparecem, com "Não", se houver incursões registradas nelas) |
+| Resultados estatísticos (CSV) | distribuição completa, testes globais por item, comparações pareadas (com diferença em p.p., razão e odds ratio com IC), tendência por dificuldade; sempre com método, amostra, `masmorras_consideradas`, estatística, graus de liberdade, valor-p bruto e ajustado (Holm), família do ajuste, simulações, semente, interpretação e notas; comparações por item e pareadas só entre as masmorras em que o item pode ser obtido, e a distribuição completa só com os itens comuns |
+| Relatório consolidado (XLSX) | abas Resumo (versão, data/hora, amostra, filtros, parâmetros e limitações), Histórico, Frequências, Resultados estatísticos, Distribuição observada (células de itens indisponíveis ficam vazias) e Distribuição esperada (apenas itens comuns a todas as masmorras) |
 
 Formato dos CSV, pensado para abrir corretamente no Excel em português: separador `;`, vírgula decimal e UTF-8 com
 BOM. No XLSX os números são numéricos (proporções e intervalos em formato percentual, valores-p com quatro casas),
 com cabeçalho em negrito, primeira linha congelada e colunas ajustadas.
+
+O resumo do XLSX inclui avisos quando há itens sem masmorras definidas ou incursões fora das masmorras do item.
 
 Erros de gravação (pasta inválida, arquivo aberto em outro programa) viram `ExportError` com mensagem em português.
 

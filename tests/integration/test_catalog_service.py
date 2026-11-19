@@ -24,19 +24,21 @@ def test_dificuldade_invalida(dungeons, dificuldade):
 
 @pytest.mark.parametrize("nome", ["", "   ", None, "a" * 101])
 def test_nome_invalido(dungeons, items, nome):
+    masmorra = dungeons.create("Base", 1)
     with pytest.raises(ValidationError):
         dungeons.create(nome, 1)
     with pytest.raises(ValidationError):
-        items.create(nome, "weapons")
+        items.create(nome, "weapons", [masmorra.id])
 
 
 def test_nome_duplicado_ignora_caixa_e_espacos(dungeons, items):
     dungeons.create("Caverna", 1)
     with pytest.raises(DuplicateError):
         dungeons.create("  caverna ", 2)
-    items.create("Espada", "weapons")
+    masmorra = dungeons.list()[0]
+    items.create("Espada", "weapons", [masmorra.id])
     with pytest.raises(DuplicateError):
-        items.create("ESPADA", "armor")
+        items.create("ESPADA", "armor", [masmorra.id])
 
 
 def test_nome_duplicado_na_edicao_mas_nao_consigo_mesmo(dungeons):
@@ -56,8 +58,9 @@ def test_edita_e_inativa_masmorra(dungeons):
     assert len(dungeons.list()) == 1
 
 
-def test_item_categoria_e_inativacao(items):
-    i = items.create("Anel", category=" accessories ")
+def test_item_categoria_e_inativacao(items, dungeons):
+    masmorra = dungeons.create("Base", 1)
+    i = items.create("Anel", " accessories ", [masmorra.id])
     assert i.category == "accessories"
     assert items.update(i.id, category=ItemCategory.RELICS).category == "relics"
     with pytest.raises(ValidationError, match="obrigatória"):
@@ -98,8 +101,9 @@ def test_atualizacao_sem_mudanca_nao_altera_updated_at(dungeons):
     assert dungeons.update(d.id, name="A").updated_at == d.updated_at
 
 
-def test_todas_as_categorias_padrao_sao_aceitas(items):
-    criados = [items.create(f"Item {c.value}", category=c) for c in ItemCategory]
+def test_todas_as_categorias_padrao_sao_aceitas(items, dungeons):
+    masmorra = dungeons.create("Base", 1)
+    criados = [items.create(f"Item {c.value}", c, [masmorra.id]) for c in ItemCategory]
     assert [i.category for i in criados] == [c.value for c in ItemCategory]
     assert [c.label for c in ItemCategory] == [
         "Armas",
@@ -114,22 +118,25 @@ def test_todas_as_categorias_padrao_sao_aceitas(items):
 
 
 @pytest.mark.parametrize("categoria", ["raro", "Armas", 3, ["weapons"]])
-def test_categoria_fora_do_padrao_e_rejeitada(items, categoria):
+def test_categoria_fora_do_padrao_e_rejeitada(items, dungeons, categoria):
+    masmorra = dungeons.create("Base", 1)
     with pytest.raises(ValidationError, match="Categoria inválida"):
-        items.create("X", category=categoria)
-    existente = items.create("Y", "weapons")
+        items.create("X", categoria, [masmorra.id])
+    existente = items.create("Y", "weapons", [masmorra.id])
     with pytest.raises(ValidationError):
         items.update(existente.id, category=categoria)
     assert items.get(existente.id).category == "weapons"
 
 
 @pytest.mark.parametrize("categoria", [None, "", "   "])
-def test_categoria_e_obrigatoria_no_cadastro(items, categoria):
+def test_categoria_e_obrigatoria_no_cadastro(items, dungeons, categoria):
+    masmorra = dungeons.create("Base", 1)
     with pytest.raises(ValidationError, match="obrigatória"):
-        items.create("Sem categoria", categoria)
+        items.create("Sem categoria", categoria, [masmorra.id])
     assert items.list() == []
 
 
-def test_categoria_nao_pode_ser_omitida(items):
+def test_categoria_nao_pode_ser_omitida(items, dungeons):
+    masmorra = dungeons.create("Base", 1)
     with pytest.raises(TypeError):
-        items.create("Sem categoria")
+        items.create("Sem categoria", dungeon_ids=[masmorra.id])

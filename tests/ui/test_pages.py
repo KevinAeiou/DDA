@@ -40,11 +40,16 @@ def test_selecao_obrigatoria_para_editar(qapp, services, dialogs):
     assert dialogs.errors and "Selecione" in dialogs.errors[-1]
 
 
-def test_pagina_de_itens_mostra_categoria(qapp, services):
-    services.items.create("Anel", category="accessories")
+def test_pagina_de_itens_mostra_categoria(qapp, services, seeded):
+    services.items.create("Zircão", "accessories", [seeded[0][0].id])
     page = ItemsPage(services)
     page.refresh()
-    assert (cell(page, 0, 0), cell(page, 0, 1), cell(page, 0, 3)) == ("Anel", "Acessórios", "Sim")
+    linha = next(r for r in range(page.table.rowCount()) if cell(page, r, 0) == "Zircão")
+    assert (cell(page, linha, 1), cell(page, linha, 2), cell(page, linha, 4)) == (
+        "Acessórios",
+        "Masmorra 1",
+        "Sim",
+    )
 
 
 def test_registro_exige_selecao_e_grava_com_feedback(qapp, services, seeded, dialogs):
@@ -76,8 +81,8 @@ def test_registro_so_lista_ativos_e_orienta_cadastro(qapp, services, dialogs):
     assert not page.save_button.isEnabled()
     assert "masmorras e itens" in page.hint.text()
     d = services.dungeons.create("A", 1)
-    i = services.items.create("X", "weapons")
-    services.items.create("Y", "weapons")
+    i = services.items.create("X", "weapons", [d.id])
+    services.items.create("Y", "weapons", [d.id])
     services.items.set_active(i.id, False)
     page.refresh()
     assert page.save_button.isEnabled()
@@ -202,8 +207,8 @@ def test_janela_principal_navega_e_atualiza(qapp, services, settings, seeded):
 def test_fluxo_completo_cadastro_registro_historico(qapp, services, settings, dialogs):
     janela = MainWindow(services, settings)
     janela.open_page("Masmorras")
-    services.dungeons.create("Floresta", 2)
-    services.items.create("Arco", "weapons")
+    floresta = services.dungeons.create("Floresta", 2)
+    services.items.create("Arco", "weapons", [floresta.id])
     janela.open_page("Registrar incursão")
     registro = janela.pages["Registrar incursão"]
     registro.form.dungeon_combo.setCurrentIndex(0)
@@ -217,10 +222,11 @@ def test_fluxo_completo_cadastro_registro_historico(qapp, services, settings, di
 
 
 def test_pagina_de_itens_filtra_por_categoria(qapp, services):
-    services.items.create("Espada", category="weapons")
-    services.items.create("Machado", category="weapons")
-    services.items.create("Poção", category="consumables")
-    services.items.create("Anel", category="relics")
+    base = services.dungeons.create("Base", 1)
+    services.items.create("Espada", "weapons", [base.id])
+    services.items.create("Machado", "weapons", [base.id])
+    services.items.create("Poção", "consumables", [base.id])
+    services.items.create("Anel", "relics", [base.id])
     page = ItemsPage(services)
     page.refresh()
     assert page.table.rowCount() == 4

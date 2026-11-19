@@ -44,6 +44,16 @@ def format_category(value: str | None) -> str:
         return value
 
 
+def format_item_dungeons(item, total_dungeons: int) -> str:
+    """Masmorras do item: nomes, 'Todas' ou aviso quando ainda não foram definidas."""
+    names = [d.name for d in item.dungeons]
+    if not names:
+        return "⚠ Não definidas"
+    if total_dungeons and len(names) == total_dungeons:
+        return f"Todas ({total_dungeons})"
+    return ", ".join(names)
+
+
 def format_bool(value: bool) -> str:
     return "Sim" if value else "Não"
 

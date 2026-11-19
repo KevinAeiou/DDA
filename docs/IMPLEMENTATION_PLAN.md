@@ -99,6 +99,15 @@ a revisão final dos critérios de aceitação com dados reais.
 
 **Saída (critérios 1, 13):** executável validado; todos os critérios de aceitação (seção 12) revisados.
 
+## Evolução pós-MVP: masmorras por item ☑
+
+Cada item passou a informar em quais masmorras pode ser obtido (associação `item_dungeons`, migração `0004`).
+Impacto: cadastro e edição do item, validação do registro e da correção de incursões, listas de itens filtradas por
+masmorra, análise estatística restrita à disponibilidade (zeros estruturais), exportações e avisos para itens
+cadastrados antes da mudança, que devem ser editados manualmente. Detalhes em [PERSISTENCE.md](PERSISTENCE.md),
+[STATISTICS.md](STATISTICS.md) e [UI.md](UI.md). O executável precisa ser gerado novamente
+(`.\scripts\build_exe.ps1`) para incluir a mudança.
+
 ## Futuro (fora do MVP)
 
 Estimativa de tamanho amostral/poder após piloto (seção 7.8), TOST com margem predefinida, análise sequencial.

@@ -33,11 +33,16 @@ class Clock:
 
 
 @pytest.fixture
-def services(tmp_path):
+def engine(tmp_path):
     engine = create_db_engine(tmp_path / "ui.db")
     upgrade_database(engine)
-    yield Services.create(make_session_factory(engine), Clock())
+    yield engine
     engine.dispose()
+
+
+@pytest.fixture
+def services(engine):
+    return Services.create(make_session_factory(engine), Clock())
 
 
 @pytest.fixture
@@ -101,5 +106,6 @@ def dialogs(monkeypatch, qapp):
 @pytest.fixture
 def seeded(services):
     dungeons = [services.dungeons.create(f"Masmorra {i}", i) for i in range(1, 6)]
-    items = [services.items.create(n, "weapons") for n in ("Espada", "Escudo", "Anel")]
+    todas = [d.id for d in dungeons]
+    items = [services.items.create(n, "weapons", todas) for n in ("Espada", "Escudo", "Anel")]
     return dungeons, items

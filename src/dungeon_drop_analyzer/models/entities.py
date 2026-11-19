@@ -5,7 +5,7 @@ from __future__ import annotations
 import enum
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text, text
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, String, Table, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, UTCDateTime, utc_default
@@ -69,6 +69,15 @@ class Dungeon(Base):
     runs: Mapped[list[Run]] = relationship(back_populates="dungeon")
 
 
+item_dungeons = Table(
+    "item_dungeons",
+    Base.metadata,
+    Column("item_id", ForeignKey("items.id", ondelete="RESTRICT"), primary_key=True),
+    Column("dungeon_id", ForeignKey("dungeons.id", ondelete="RESTRICT"), primary_key=True),
+    Index("ix_item_dungeons_dungeon_id", "dungeon_id"),
+)
+
+
 class Item(Base):
     __tablename__ = "items"
     __table_args__ = (CheckConstraint(CATEGORY_CHECK, name="category"),)
@@ -82,6 +91,11 @@ class Item(Base):
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_default)
 
     runs: Mapped[list[Run]] = relationship(back_populates="item")
+    dungeons: Mapped[list[Dungeon]] = relationship(
+        secondary=item_dungeons,
+        lazy="selectin",
+        order_by=lambda: [Dungeon.difficulty, Dungeon.name],
+    )
 
 
 class Run(Base):

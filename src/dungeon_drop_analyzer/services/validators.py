@@ -53,6 +53,20 @@ def validate_category(value: object) -> str:
     raise ValidationError(f"Categoria inválida. Escolha entre: {valid}.")
 
 
+def validate_dungeon_ids(value: object) -> list[int]:
+    if isinstance(value, (str, bytes)) or not hasattr(value, "__iter__"):
+        raise ValidationError("Selecione ao menos uma masmorra.")
+    ids: list[int] = []
+    for entry in value:
+        if isinstance(entry, bool) or not isinstance(entry, int):
+            raise ValidationError("As masmorras devem ser informadas por identificador inteiro.")
+        if entry not in ids:
+            ids.append(entry)
+    if not ids:
+        raise ValidationError("Selecione ao menos uma masmorra em que o item pode ser obtido.")
+    return ids
+
+
 def validate_bool(value: object, label: str) -> bool:
     if not isinstance(value, bool):
         raise ValidationError(f"{label} deve ser verdadeiro ou falso.")
