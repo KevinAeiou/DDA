@@ -28,6 +28,8 @@ convertidas. A exibição em formato local fica para a interface.
 - Migração `0002`: categorias padrão de itens (ver abaixo). Como o SQLite não adiciona constraints a tabelas
   existentes, ela recria `items`; por isso `upgrade_database`/`downgrade_database` desligam as foreign keys
   durante a migração, executam `PRAGMA foreign_key_check` ao final (falhando se houver violação) e religam.
+- Migração `0005`: troca a unicidade de `items.name` pela unicidade do par (`name`, `category`), recriando a tabela como
+  as anteriores. A reversão é recusada se houver itens de mesmo nome em categorias diferentes.
 - Migração `0004`: tabela `item_dungeons` (masmorras em que cada item pode ser obtido). Itens existentes ficam
   sem masmorras até serem editados manualmente (a migração não inventa associações).
 - Migração `0003`: categoria de item obrigatória (`NOT NULL` e CHECK sem `NULL`), com a mesma recriação de
@@ -37,8 +39,10 @@ convertidas. A exibição em formato local fica para a interface.
 - Constraints têm nomes determinísticos (convenção de nomes no `MetaData`).
 - `runs.dungeon_id` e `runs.item_id` usam `ON DELETE RESTRICT`; masmorras e itens nunca são excluídos, apenas
   inativados. Índices em `runs.completed_at`, `runs.dungeon_id`, `runs.item_id`.
-- Nomes de masmorras e itens são únicos sem diferenciar maiúsculas de minúsculas (`COLLATE NOCASE`, que só
-  cobre letras ASCII; acentos diferentes contam como nomes distintos).
+- Nomes de masmorras são únicos e, nos itens, o par (nome, categoria) é único, sem diferenciar maiúsculas de
+  minúsculas (`COLLATE NOCASE`, que só cobre letras ASCII; acentos diferentes contam como nomes distintos).
+- Itens de mesmo nome em categorias diferentes aparecem como `Nome (Categoria)` em listas, gráficos, análises e
+  relatórios (`Item.display_name`, definido pelos repositórios); nomes não repetidos aparecem sem a categoria.
 - Dificuldade (1–5), duração (≥ 0) e os estados `yes`/`no`/`unknown` são validados no banco e nos serviços.
 - A dificuldade não é única por masmorra, pois a confirmação dos níveis 1–5 é uma decisão em aberto.
 

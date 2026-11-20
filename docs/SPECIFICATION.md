@@ -135,8 +135,9 @@ M1--M5.
 
 ### RF-02 --- Itens
 
-Permitir criar, consultar, editar e inativar: - Nome: obrigatório e
-único. - Categoria: obrigatória, escolhida entre as oito categorias padrão
+Permitir criar, consultar, editar e inativar: - Nome: obrigatório; o par
+nome e categoria é único (itens de categorias diferentes podem ter o
+mesmo nome, sem diferenciar maiúsculas de minúsculas). - Categoria: obrigatória, escolhida entre as oito categorias padrão
 (seção 3.1). - Masmorra(s): obrigatória, uma ou mais masmorras em que
 o item pode ser obtido (seção 3.2). - Descrição: opcional. - Ativo: sim/não.
 
@@ -331,7 +332,7 @@ inválida e exige análise específica.
 ### `items`
 
 -   `id`: PK.
--   `name`: texto obrigatório, único.
+-   `name`: texto obrigatório; único junto com `category`.
 -   `category`: obrigatório; um dos códigos da seção 3.1 (NOT NULL e CHECK).
 -   `description`: opcional.
 -   `is_active`: booleano.

@@ -185,7 +185,9 @@ class AnalyticsService:
             for (d, i), count in counts.items()
             if count > 0 and not _allowed(item_by_id[i], d)
         ]
-        return sorted(found, key=lambda r: (r.item.name.casefold(), r.dungeon.name.casefold()))
+        return sorted(
+            found, key=lambda r: (r.item.display_name.casefold(), r.dungeon.name.casefold())
+        )
 
     def dashboard(self, flt: RunFilter | None = None) -> DashboardData:
         dungeons, items, cells, timeline = self._load(flt)
@@ -207,7 +209,7 @@ class AnalyticsService:
             )
             for item in shown
         ]
-        item_counts.sort(key=lambda c: (-c.count, c.item.name.casefold()))
+        item_counts.sort(key=lambda c: (-c.count, c.item.display_name.casefold()))
         most: list[ItemCount] = []
         least: list[ItemCount] = []
         if total and item_counts:
@@ -276,7 +278,7 @@ class AnalyticsService:
             overall, per_item = analyze_items(
                 matrix,
                 [d.name for d in dungeons],
-                [i.name for i in items],
+                [i.display_name for i in items],
                 min_n=min_n,
                 n_sim=n_sim,
                 seed=seed,

@@ -178,7 +178,7 @@ class AnalysisPage(Page):
         self.item_combo.blockSignals(True)
         self.item_combo.clear()
         for item in report.items:
-            self.item_combo.addItem(item.name, item.id)
+            self.item_combo.addItem(item.display_name, item.id)
         self.item_combo.setCurrentIndex(max(self.item_combo.findData(current), 0))
         self.item_combo.blockSignals(False)
         self.render_item()
@@ -252,7 +252,7 @@ class AnalysisPage(Page):
             fill_table(self.distribution_table, [])
             return
         overall = report.overall
-        common_names = [item.name for item in report.common_items]
+        common_names = [item.display_name for item in report.common_items]
         scope = (
             f"{len(report.dungeons)} masmorras × {len(common_names)} itens comuns"
             if common_names
@@ -268,7 +268,8 @@ class AnalysisPage(Page):
         )
         common_index = {item.id: k for k, item in enumerate(report.common_items)}
         headers = ["Masmorra (n)"] + [
-            f"{item.name} *" if item.id in common_index else item.name for item in report.items
+            f"{item.display_name} *" if item.id in common_index else item.display_name
+            for item in report.items
         ]
         self.distribution_table.setColumnCount(len(headers))
         self.distribution_table.setHorizontalHeaderLabels(headers)
@@ -316,7 +317,7 @@ class AnalysisPage(Page):
         self.difficulty_table.setHorizontalHeaderLabels(headers)
         rows = []
         for trend in report.trends:
-            cells = [trend.item.name]
+            cells = [trend.item.display_name]
             by_level = {group.difficulty: group for group in trend.groups}
             for level in report.levels:
                 group = by_level.get(level.difficulty)

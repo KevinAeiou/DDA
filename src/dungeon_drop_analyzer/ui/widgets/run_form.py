@@ -109,7 +109,7 @@ class RunForm(QWidget):
             )
         self.item_combo.clear()
         for item in items:
-            self.item_combo.addItem(item.name, item.id)
+            self.item_combo.addItem(item.display_name, item.id)
         self._select(self.dungeon_combo, dungeon_id)
         self._select(self.item_combo, item_id)
 
@@ -123,7 +123,7 @@ class RunForm(QWidget):
         item_id = self.selected_item_id()
         self.item_combo.clear()
         for item in items:
-            self.item_combo.addItem(item.name, item.id)
+            self.item_combo.addItem(item.display_name, item.id)
         self._select(self.item_combo, item_id)
 
     @staticmethod

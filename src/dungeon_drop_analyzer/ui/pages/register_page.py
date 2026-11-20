@@ -103,4 +103,6 @@ class RegisterRunPage(Page):
         ok, run = guarded(self, lambda: self.services.runs.register(**values))
         if ok:
             self.form.reset_after_save()
-            self.message.emit(f"Incursão registrada: {run.item.name} em {run.dungeon.name}.")
+            self.message.emit(
+                f"Incursão registrada: {run.item.display_name} em {run.dungeon.name}."
+            )

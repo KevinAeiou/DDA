@@ -104,7 +104,7 @@ class FilterPanel(QGroupBox):
         self.item_combo.clear()
         self.item_combo.addItem("Todos", None)
         for item in services.items.list():
-            self.item_combo.addItem(item.name, item.id)
+            self.item_combo.addItem(item.display_name, item.id)
         self.version_combo.clear()
         self.version_combo.addItem("Todas", None)
         for version in services.runs.game_versions():

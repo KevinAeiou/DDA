@@ -28,7 +28,7 @@ def test_migracao_gera_esquema_identico_aos_modelos(engine):
 def test_upgrade_e_idempotente_e_downgrade_remove_tudo(engine):
     upgrade_database(engine)
     with engine.connect() as conn:
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0004"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0005"
     downgrade_database(engine, "base")
     assert set(inspect(engine).get_table_names()) <= {"alembic_version"}
 

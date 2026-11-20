@@ -5,7 +5,17 @@ from __future__ import annotations
 import enum
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, String, Table, Text, text
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Index,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, UTCDateTime, utc_default
@@ -80,10 +90,13 @@ item_dungeons = Table(
 
 class Item(Base):
     __tablename__ = "items"
-    __table_args__ = (CheckConstraint(CATEGORY_CHECK, name="category"),)
+    __table_args__ = (
+        CheckConstraint(CATEGORY_CHECK, name="category"),
+        UniqueConstraint("name", "category", name="uq_items_name_category"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(NAME_LENGTH, collation="NOCASE"), unique=True)
+    name: Mapped[str] = mapped_column(String(NAME_LENGTH, collation="NOCASE"))
     category: Mapped[str] = mapped_column(String(NAME_LENGTH))
     description: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(default=True, server_default=text("1"))
@@ -91,6 +104,12 @@ class Item(Base):
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_default)
 
     runs: Mapped[list[Run]] = relationship(back_populates="item")
+
+    @property
+    def display_name(self) -> str:
+        """Nome para telas e relatórios; inclui a categoria quando outro item tem o mesmo nome."""
+        return self.__dict__.get("_display_name") or self.name
+
     dungeons: Mapped[list[Dungeon]] = relationship(
         secondary=item_dungeons,
         lazy="selectin",

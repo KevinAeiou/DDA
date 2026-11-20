@@ -347,3 +347,34 @@ def test_item_novo_so_pode_ser_vinculado_a_masmorras_listadas(qapp, services, re
     dialog.accept()
     novo = next(i for i in services.items.list() if i.name == "Novo")
     assert [m.name for m in novo.dungeons] == ["Masmorra 1", "Masmorra 2"]
+
+
+def test_dialogo_aceita_mesmo_nome_em_outra_categoria_e_recusa_na_mesma(
+    qapp, services, restrito, dialogs
+):
+    d, _ = restrito
+    dialog = ItemDialog(services.items, services.dungeons.list())
+    dialog.name.setText("A")
+    dialog.category.setCurrentIndex(dialog.category.findData("weapons"))
+    dialog.set_checked_dungeons({d[0].id})
+    dialog.accept()
+    assert "categoria 'Armas'" in dialogs.errors[-1]
+    assert dialog.result() == 0
+    dialog.category.setCurrentIndex(dialog.category.findData("consumables"))
+    dialog.accept()
+    assert dialog.result() == 1
+    assert sorted(i.display_name for i in services.items.list() if i.name == "A") == [
+        "A (Armas)",
+        "A (Consumíveis)",
+    ]
+
+
+def test_registro_distingue_itens_de_mesmo_nome_pela_categoria(qapp, services, restrito):
+    d, _ = restrito
+    services.items.create("A", "consumables", [d[0].id])
+    page = RegisterRunPage(services)
+    page.refresh()
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
+    combo = page.form.item_combo
+    nomes = [combo.itemText(i) for i in range(combo.count())]
+    assert "A (Armas)" in nomes and "A (Consumíveis)" in nomes and "A2" in nomes

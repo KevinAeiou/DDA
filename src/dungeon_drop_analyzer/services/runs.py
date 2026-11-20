@@ -66,7 +66,7 @@ class RunService:
         if item is None:
             raise NotFoundError("Item não encontrado.")
         if not item.is_active:
-            raise ValidationError(f"O item '{item.name}' está inativo.")
+            raise ValidationError(f"O item '{item.display_name}' está inativo.")
         return item
 
     @staticmethod
@@ -76,7 +76,7 @@ class RunService:
         if allowed and dungeon.id not in allowed:
             names = ", ".join(d.name for d in item.dungeons)
             raise ValidationError(
-                f"O item '{item.name}' não pode ser obtido na masmorra '{dungeon.name}'. "
+                f"O item '{item.display_name}' não pode ser obtido na masmorra '{dungeon.name}'. "
                 f"Masmorras do item: {names}."
             )
 

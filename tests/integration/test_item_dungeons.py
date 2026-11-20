@@ -190,7 +190,7 @@ def test_migracao_0004_cria_tabela_sem_associar_itens_existentes(tmp_path):
     )
     upgrade_database(engine)
     with engine.connect() as conn:
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0004"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0005"
         assert conn.execute(text("SELECT count(*) FROM items")).scalar() == 1
         assert conn.execute(text("SELECT count(*) FROM item_dungeons")).scalar() == 0
         assert compare_metadata(MigrationContext.configure(conn), Base.metadata) == []
@@ -403,3 +403,67 @@ def test_nao_vincula_masmorra_inativa_na_edicao_mas_preserva_vinculos_existentes
     dungeons.set_active(d[2].id, True)
     ampliado = items.update(item.id, dungeon_ids=[d[0].id, d[1].id, d[2].id])
     assert len(ampliado.dungeons) == 3
+
+
+def test_migracao_0005_troca_nome_unico_por_nome_e_categoria(tmp_path):
+    engine = create_db_engine(tmp_path / "unico.db")
+    upgrade_database(engine, "0004")
+    sql(
+        engine,
+        "INSERT INTO items (name, category, created_at, updated_at) "
+        "VALUES ('Esfera', 'weapons', '2026-01-01', '2026-01-01')",
+    )
+    with pytest.raises(IntegrityError):
+        sql(
+            engine,
+            "INSERT INTO items (name, category, created_at, updated_at) "
+            "VALUES ('esfera', 'weapons', '2026-01-01', '2026-01-01')",
+        )
+    upgrade_database(engine)
+    sql(
+        engine,
+        "INSERT INTO items (name, category, created_at, updated_at) "
+        "VALUES ('ESFERA', 'armor', '2026-01-01', '2026-01-01')",
+    )
+    with pytest.raises(IntegrityError):
+        sql(
+            engine,
+            "INSERT INTO items (name, category, created_at, updated_at) "
+            "VALUES ('esfera', 'armor', '2026-01-01', '2026-01-01')",
+        )
+    with engine.connect() as conn:
+        assert compare_metadata(MigrationContext.configure(conn), Base.metadata) == []
+    with pytest.raises(RuntimeError, match="mesmo nome"):
+        downgrade_database(engine, "0004")
+    sql(engine, "DELETE FROM items WHERE category = 'armor'")
+    downgrade_database(engine, "0004")
+    with pytest.raises(IntegrityError):
+        sql(
+            engine,
+            "INSERT INTO items (name, category, created_at, updated_at) "
+            "VALUES ('esfera', 'armor', '2026-01-01', '2026-01-01')",
+        )
+
+
+def test_itens_de_mesmo_nome_em_categorias_diferentes_sao_distinguidos_nas_analises(
+    services, analytics, tmp_path
+):
+    d = [services.dungeons.create(f"Masmorra {i}", i) for i in (1, 2)]
+    ids = [m.id for m in d]
+    arma = services.items.create("Catalisador", "weapons", ids)
+    recurso = services.items.create("Catalisador", "crafting_resources", ids)
+    for k in range(12):
+        for masmorra, item in ((d[0], arma), (d[0], recurso), (d[1], recurso)):
+            services.runs.register(
+                masmorra.id, item.id, completed_at=datetime(2026, 3, 1 + k, 10, k)
+            )
+    relatorio = analytics.analyze()
+    nomes_itens = [i.display_name for i in relatorio.items]
+    assert sorted(nomes_itens) == ["Catalisador (Armas)", "Catalisador (Recursos de artesanato)"]
+    assert {a.item for a in relatorio.per_item} == set(nomes_itens)
+    painel = analytics.dashboard()
+    assert sorted(c.item.display_name for c in painel.item_counts) == sorted(nomes_itens)
+    historico = services.runs.list()
+    assert {r.item.display_name for r in historico} == set(nomes_itens)
+    export_frequencies_csv(services, None, tmp_path / "freq.csv", AGORA)
+    assert set(ler(tmp_path / "freq.csv")["item"]) == set(nomes_itens)
