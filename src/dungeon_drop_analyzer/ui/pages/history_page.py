@@ -97,7 +97,7 @@ class HistoryPage(Page):
                     format_datetime(run.completed_at),
                     run.dungeon.name,
                     str(run.dungeon.difficulty),
-                    run.item.name,
+                    run.item.display_name,
                     format_duration(run.duration_seconds),
                     run.game_version or "",
                     format_tristate(run.bonus_status),
@@ -152,7 +152,8 @@ class HistoryPage(Page):
             return
         question = (
             f"Excluir a incursão de {format_datetime(run.completed_at)} "
-            f"({run.item.name} em {run.dungeon.name})? A exclusão fica registrada na auditoria."
+            f"({run.item.display_name} em {run.dungeon.name})? "
+            "A exclusão fica registrada na auditoria."
         )
         if not confirm(self, question, "Excluir"):
             return

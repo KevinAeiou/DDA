@@ -11,7 +11,13 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from dungeon_drop_analyzer.core.database import session_scope
 from dungeon_drop_analyzer.core.timeutils import utc_now
-from dungeon_drop_analyzer.models import AuditAction, Dungeon, Item, ItemCategory
+from dungeon_drop_analyzer.models import (
+    CATEGORY_LABELS,
+    AuditAction,
+    Dungeon,
+    Item,
+    ItemCategory,
+)
 from dungeon_drop_analyzer.repositories import DungeonRepository, ItemRepository, RunRepository
 
 from . import audit
@@ -50,10 +56,18 @@ class _CatalogService:
             raise NotFoundError(f"{self.label} não encontrado(a).")
         return entity
 
-    def _ensure_unique_name(self, session: Session, name: str, ignore_id: int | None) -> None:
-        existing = self._repo(session).get_by_name(name)
+    unique_fields: tuple[str, ...] = ("name",)
+
+    def _find_duplicate(self, session: Session, values: dict[str, Any]):
+        return self._repo(session).get_by_name(values["name"])
+
+    def _duplicate_message(self, values: dict[str, Any]) -> str:
+        return f"Já existe {self.label.lower()} com o nome '{values['name']}'."
+
+    def _ensure_unique(self, session: Session, values: dict[str, Any], ignore_id: int | None):
+        existing = self._find_duplicate(session, values)
         if existing is not None and existing.id != ignore_id:
-            raise DuplicateError(f"Já existe {self.label.lower()} com o nome '{name}'.")
+            raise DuplicateError(self._duplicate_message(values))
 
     relation_fields: frozenset[str] = frozenset()
 
@@ -66,7 +80,7 @@ class _CatalogService:
     def _create(self, values: dict[str, Any], relations: dict[str, Any] | None = None):
         values = {key: self.validators[key](value) for key, value in values.items()}
         with session_scope(self._factory) as session:
-            self._ensure_unique_name(session, values["name"], None)
+            self._ensure_unique(session, values, None)
             now = self._clock()
             entity = self._repo(session).add(
                 self.entity_cls(**values, created_at=now, updated_at=now)
@@ -94,8 +108,9 @@ class _CatalogService:
         cleaned = {key: self.validators[key](value) for key, value in changes.items()}
         with session_scope(self._factory) as session:
             entity = self._load(session, entity_id)
-            if "name" in cleaned:
-                self._ensure_unique_name(session, cleaned["name"], entity.id)
+            if any(field in cleaned for field in self.unique_fields):
+                merged = {field: getattr(entity, field) for field in self.unique_fields}
+                self._ensure_unique(session, {**merged, **cleaned}, entity.id)
             old = self._snapshot(entity)
             changed = {k: v for k, v in cleaned.items() if getattr(entity, k) != v}
             relation_changed = (
@@ -168,6 +183,7 @@ class ItemService(_CatalogService):
     entity_cls = Item
     repo_cls = ItemRepository
     relation_fields = frozenset({"dungeon_ids"})
+    unique_fields = ("name", "category")
     validators = {
         "name": lambda v: clean_name(v, "Nome do item"),
         "category": validate_category,
@@ -193,6 +209,13 @@ class ItemService(_CatalogService):
             },
             {"dungeon_ids": dungeon_ids},
         )
+
+    def _find_duplicate(self, session: Session, values: dict[str, Any]):
+        return self._repo(session).get_by_name(values["name"], values["category"])
+
+    def _duplicate_message(self, values: dict[str, Any]) -> str:
+        label = CATEGORY_LABELS[ItemCategory(values["category"])]
+        return f"Já existe um item com o nome '{values['name']}' na categoria '{label}'."
 
     def _snapshot(self, entity) -> dict[str, Any]:
         data = audit.snapshot(entity)

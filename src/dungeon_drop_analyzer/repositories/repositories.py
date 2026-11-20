@@ -10,7 +10,14 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, joinedload
 
 from dungeon_drop_analyzer.core.timeutils import to_utc
-from dungeon_drop_analyzer.models import AuditLog, Dungeon, Item, Run, item_dungeons
+from dungeon_drop_analyzer.models import (
+    AuditLog,
+    Dungeon,
+    Item,
+    Run,
+    assign_display_names,
+    item_dungeons,
+)
 
 
 class DungeonRepository:
@@ -47,8 +54,9 @@ class ItemRepository:
     def get(self, item_id: int) -> Item | None:
         return self.session.get(Item, item_id)
 
-    def get_by_name(self, name: str) -> Item | None:
-        return self.session.scalars(select(Item).where(Item.name == name)).first()
+    def get_by_name(self, name: str, category: str) -> Item | None:
+        stmt = select(Item).where(Item.name == name, Item.category == category)
+        return self.session.scalars(stmt).first()
 
     def dungeon_map(self) -> dict[int, set[int]]:
         """Masmorras cadastradas para cada item (itens sem masmorras definidas ficam ausentes)."""
@@ -60,10 +68,9 @@ class ItemRepository:
         return mapping
 
     def list(self, active_only: bool = False) -> list[Item]:
-        stmt = select(Item).order_by(Item.name)
-        if active_only:
-            stmt = stmt.where(Item.is_active.is_(True))
-        return list(self.session.scalars(stmt))
+        items = list(self.session.scalars(select(Item).order_by(Item.name, Item.category)))
+        assign_display_names(items)
+        return [item for item in items if item.is_active] if active_only else items
 
 
 @dataclass(frozen=True)
@@ -88,11 +95,14 @@ class RunRepository:
         return run
 
     def get(self, run_id: int) -> Run | None:
-        return self.session.scalars(
+        run = self.session.scalars(
             select(Run)
             .options(joinedload(Run.dungeon), joinedload(Run.item))
             .where(Run.id == run_id)
         ).first()
+        if run is not None:
+            ItemRepository(self.session).list()
+        return run
 
     def delete(self, run: Run) -> None:
         self.session.delete(run)
@@ -134,7 +144,9 @@ class RunRepository:
         stmt = stmt.order_by(*order).offset(offset)
         if limit is not None:
             stmt = stmt.limit(limit)
-        return list(self.session.scalars(stmt).unique())
+        runs = list(self.session.scalars(stmt).unique())
+        ItemRepository(self.session).list()
+        return runs
 
     def count_matrix(self, flt: RunFilter | None = None) -> list[tuple[int, int, int]]:
         stmt = self._apply(

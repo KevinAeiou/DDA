@@ -37,8 +37,46 @@ def test_nome_duplicado_ignora_caixa_e_espacos(dungeons, items):
         dungeons.create("  caverna ", 2)
     masmorra = dungeons.list()[0]
     items.create("Espada", "weapons", [masmorra.id])
+    with pytest.raises(DuplicateError) as erro:
+        items.create(" ESPADA ", "weapons", [masmorra.id])
+    assert "categoria" in str(erro.value)
+
+
+def test_mesmo_nome_e_permitido_em_categorias_diferentes(dungeons, items):
+    masmorra = dungeons.create("Caverna", 1)
+    arma = items.create("Catalisador", "weapons", [masmorra.id])
+    recurso = items.create("catalisador", "crafting_resources", [masmorra.id])
+    assert arma.id != recurso.id
+    assert sorted(i.display_name for i in items.list()) == [
+        "Catalisador (Armas)",
+        "catalisador (Recursos de artesanato)",
+    ]
+
+
+def test_edicao_nao_permite_nome_igual_na_mesma_categoria(dungeons, items):
+    masmorra = dungeons.create("Caverna", 1)
+    items.create("Pocao", "consumables", [masmorra.id])
+    outro = items.create("Pocao", "weapons", [masmorra.id])
     with pytest.raises(DuplicateError):
-        items.create("ESPADA", "armor", [masmorra.id])
+        items.update(outro.id, category="consumables")
+    with pytest.raises(DuplicateError):
+        items.update(outro.id, name="Pocao", category="consumables")
+    assert items.update(outro.id, description="ok").description == "ok"
+    renomeado = items.update(outro.id, name="Pocao Maior", category="consumables")
+    assert renomeado.name == "Pocao Maior"
+
+
+def test_nome_exibido_so_ganha_categoria_quando_repetido(dungeons, items):
+    masmorra = dungeons.create("Caverna", 1)
+    items.create("Unico", "weapons", [masmorra.id])
+    items.create("Repetido", "armor", [masmorra.id])
+    items.create("Repetido", "relics", [masmorra.id])
+    nomes = {i.name + "/" + i.category: i.display_name for i in items.list()}
+    assert nomes == {
+        "Unico/weapons": "Unico",
+        "Repetido/armor": "Repetido (Armaduras)",
+        "Repetido/relics": "Repetido (Relíquias)",
+    }
 
 
 def test_nome_duplicado_na_edicao_mas_nao_consigo_mesmo(dungeons):

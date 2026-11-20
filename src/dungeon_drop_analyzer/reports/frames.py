@@ -98,7 +98,7 @@ def history_frame(runs: Sequence[Run], exported_at: datetime) -> pd.DataFrame:
             "data_hora_utc": run.completed_at.strftime("%Y-%m-%d %H:%M:%S"),
             "masmorra": run.dungeon.name,
             "dificuldade": run.dungeon.difficulty,
-            "item": run.item.name,
+            "item": run.item.display_name,
             "categoria": category_label(run.item.category),
             "duracao_segundos": run.duration_seconds,
             "versao_jogo": run.game_version,
@@ -130,7 +130,7 @@ def frequencies_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataF
                 {
                     "masmorra": dungeon.name,
                     "dificuldade": dungeon.difficulty,
-                    "item": item.name,
+                    "item": item.display_name,
                     "categoria": category_label(item.category),
                     "obtencoes": x,
                     "incursoes_masmorra": n,
@@ -223,7 +223,7 @@ def statistics_frame(report: AnalysisReport, exported_at: datetime) -> pd.DataFr
         rows.append(
             _test_row(
                 "Tendência por dificuldade (exploratória)",
-                trend.item.name,
+                trend.item.display_name,
                 f"{result.groups} níveis; direção {result.direction}",
                 "Cochran-Armitage",
                 masmorras_consideradas=", ".join(
@@ -247,13 +247,16 @@ def distribution_frames(report: AnalysisReport) -> tuple[pd.DataFrame, pd.DataFr
     """
     labels = [f"{d.name} (n={report.runs_per_dungeon[d.id]})" for d in report.dungeons]
     observed = pd.DataFrame(
-        report.matrix, index=labels, columns=[item.name for item in report.items], dtype=object
+        report.matrix,
+        index=labels,
+        columns=[item.display_name for item in report.items],
+        dtype=object,
     )
     for r in range(len(report.dungeons)):
         for c in range(len(report.items)):
             if not report.is_available(r, c) and report.matrix[r, c] == 0:
                 observed.iat[r, c] = None
-    common_names = [item.name for item in report.common_items]
+    common_names = [item.display_name for item in report.common_items]
     shape = (len(report.dungeons), len(common_names))
     expected_values = np.full(shape, np.nan)
     if report.analyzable and report.overall.expected is not None:
@@ -278,7 +281,7 @@ def describe_filter(
         names = {d.id: d.name for d in dungeons}
         lines.append(("Masmorras", ", ".join(names.get(i, str(i)) for i in flt.dungeon_ids)))
     if flt.item_ids is not None:
-        names = {i.id: i.name for i in items}
+        names = {i.id: i.display_name for i in items}
         lines.append(("Itens", ", ".join(names.get(i, str(i)) for i in flt.item_ids)))
     if flt.difficulties is not None:
         lines.append(("Dificuldades", ", ".join(str(d) for d in flt.difficulties)))

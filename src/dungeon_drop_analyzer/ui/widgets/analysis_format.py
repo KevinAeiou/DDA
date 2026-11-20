@@ -51,7 +51,7 @@ def alert_text(undefined_items, inconsistent_runs) -> str:
     """Avisos sobre cadastro incompleto e incursões incompatíveis com as masmorras do item."""
     lines: list[str] = []
     if undefined_items:
-        names = ", ".join(item.name for item in undefined_items)
+        names = ", ".join(item.display_name for item in undefined_items)
         lines.append(
             "⚠ Itens sem masmorras definidas (tratados como disponíveis em todas as masmorras; "
             f"edite o cadastro): {names}."
@@ -59,7 +59,7 @@ def alert_text(undefined_items, inconsistent_runs) -> str:
     if inconsistent_runs:
         total = sum(entry.count for entry in inconsistent_runs)
         detail = "; ".join(
-            f"{entry.item.name} em {entry.dungeon.name} ({entry.count})"
+            f"{entry.item.display_name} em {entry.dungeon.name} ({entry.count})"
             for entry in inconsistent_runs[:5]
         )
         more = " …" if len(inconsistent_runs) > 5 else ""

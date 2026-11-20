@@ -149,7 +149,7 @@ class DashboardPage(Page):
             (
                 c.item.id,
                 (
-                    c.item.name,
+                    c.item.display_name,
                     format_category(c.item.category),
                     self._dungeon_text(data, c.item.id),
                     str(c.count),
@@ -169,7 +169,7 @@ class DashboardPage(Page):
         draw_bars(
             self.item_chart,
             f"Obtenções por item (até {MAX_BARS} mais frequentes)",
-            [c.item.name for c in top],
+            [c.item.display_name for c in top],
             [c.count for c in top],
             "Obtenções",
         )
@@ -177,7 +177,7 @@ class DashboardPage(Page):
     @staticmethod
     def _frequency_text(data: DashboardData) -> str:
         def describe(counts) -> str:
-            names = ", ".join(c.item.name for c in counts)
+            names = ", ".join(c.item.display_name for c in counts)
             tie = " (empate)" if len(counts) > 1 else ""
             return f"{names}{tie} — {counts[0].count} obtenção(ões), {fmt_pct(counts[0].share)}"
 
@@ -211,7 +211,7 @@ class DashboardPage(Page):
         self.comparison_table.setHorizontalHeaderLabels(headers)
         rows = []
         for item_count in data.item_counts:
-            cells = [item_count.item.name]
+            cells = [item_count.item.display_name]
             for c in with_data:
                 count = data.cells.get((c.dungeon.id, item_count.item.id), 0)
                 if count == 0 and not data.is_available(item_count.item.id, c.dungeon.id):

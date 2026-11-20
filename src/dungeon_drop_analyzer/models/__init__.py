@@ -12,6 +12,7 @@ from .entities import (
     TriState,
     item_dungeons,
 )
+from .labels import assign_display_names
 
 __all__ = [
     "CATEGORY_LABELS",
@@ -25,5 +26,6 @@ __all__ = [
     "Run",
     "TriState",
     "UTCDateTime",
+    "assign_display_names",
     "item_dungeons",
 ]

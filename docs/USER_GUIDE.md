@@ -36,6 +36,10 @@ disponíveis em todas nos cálculos (o sistema avisa). Masmorras inativas não a
 mantidos). Não é possível tirar uma masmorra do cadastro de um item que já
 tem incursões nela; corrija ou exclua essas incursões antes.
 
+**Itens com o mesmo nome:** é permitido apenas em categorias diferentes (por exemplo, "Catalisador" como arma e
+como recurso de artesanato). O sistema recusa o mesmo nome na mesma categoria e mostra os itens repetidos como
+"Nome (Categoria)" para você distingui-los.
+
 **Cadastrar vários itens em sequência:** no formulário de novo item, use **Salvar e cadastrar outro**. O item é salvo
 e o formulário continua aberto com a mesma categoria, masmorras e situação; só o nome e a descrição são limpos.
 Use **Salvar** para o último item (ou **Cancelar** para fechar sem salvar o formulário atual).

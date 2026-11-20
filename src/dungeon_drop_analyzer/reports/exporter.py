@@ -120,7 +120,7 @@ def _summary_frame(services: Services, flt, report, history_rows, exported_at) -
         if overall.n_sim is not None:
             rows.append(("Simulações / semente", f"{overall.n_sim} / {overall.seed}"))
     if report.undefined_items:
-        names = ", ".join(i.name for i in report.undefined_items)
+        names = ", ".join(i.display_name for i in report.undefined_items)
         rows.append(
             ("Aviso: itens sem masmorras definidas (tratados como disponíveis em todas)", names)
         )

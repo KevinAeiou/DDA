@@ -42,7 +42,7 @@ def test_cria_backup_valido_com_contagens(backup, populated, tmp_path):
     info = backup.create_backup(tmp_path / "saida" / "b.db")
     assert info.path.exists() and info.size_bytes > 0
     assert (info.dungeons, info.items, info.runs) == (5, 3, 4)
-    assert info.revision == "0004" and info.needs_upgrade is False
+    assert info.revision == "0005" and info.needs_upgrade is False
     assert [p.name for p in (tmp_path / "saida").iterdir()] == ["b.db"]
 
 
@@ -200,7 +200,7 @@ def test_restaura_backup_de_esquema_antigo_atualizando(backup, populated, engine
     backup.restore(caminho, tmp_path / "seg")
 
     with engine.connect() as conn:
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0004"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0005"
         assert conn.execute(text("SELECT name, category FROM items")).all() == [("Velho", "armor")]
     assert contar(engine, "runs") == 1
 
