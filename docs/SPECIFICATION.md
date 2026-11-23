@@ -176,7 +176,8 @@ itens distintos obtidos. - Distribuição geral dos itens. - Itens mais e
 menos frequentes, indicando empates. - Comparação por masmorra. -
 Evolução temporal.
 
-Indicadores e gráficos respeitam filtros e exibem o tamanho da amostra.
+Indicadores e gráficos respeitam filtros e exibem o tamanho da amostra. Apenas
+masmorras ativas são consideradas no dashboard.
 
 ### RF-06 --- Análise individual de item
 
