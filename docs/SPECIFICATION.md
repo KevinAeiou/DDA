@@ -176,7 +176,10 @@ itens distintos obtidos. - Distribuição geral dos itens. - Itens mais e
 menos frequentes, indicando empates. - Comparação por masmorra. -
 Evolução temporal.
 
-Indicadores e gráficos respeitam filtros e exibem o tamanho da amostra. Apenas
+Indicadores e gráficos respeitam filtros e exibem o tamanho da amostra. O
+dashboard mostra intervalos de confiança de Wilson (95%), a cobertura de itens
+por masmorra com metas de tamanho de amostra e a convergência da proporção
+acumulada de um item. Apenas
 masmorras ativas são consideradas no dashboard.
 
 ### RF-06 --- Análise individual de item

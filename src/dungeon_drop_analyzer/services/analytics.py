@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 
 import numpy as np
@@ -22,9 +22,15 @@ from dungeon_drop_analyzer.statistics import (
     ItemAnalysis,
     TestResult,
     TrendResult,
+    absent_upper_bound,
     analyze_items,
     holm_adjust,
+    runs_for_absent_limit,
+    runs_for_margin,
     trend_test,
+    unseen_probability,
+    wilson_interval,
+    wilson_series,
 )
 from dungeon_drop_analyzer.statistics.analysis import common_columns
 from dungeon_drop_analyzer.statistics.homogeneity import DEFAULT_N_SIM, DEFAULT_SEED
@@ -55,6 +61,82 @@ class ItemCount:
     item: Item
     count: int
     share: float
+    ci: tuple[float, float] | None = None
+
+
+@dataclass(frozen=True)
+class CoverageRow:
+    """Quanto a amostra de uma masmorra já cobre o catálogo de itens dela."""
+
+    dungeon: Dungeon
+    runs: int
+    registered_items: int
+    seen_registered: int
+    seen_total: int
+    singletons: int
+    top_item: Item | None
+    top_share: float | None
+
+    @property
+    def unseen_registered(self) -> int:
+        return self.registered_items - self.seen_registered
+
+    @property
+    def unseen_chance(self) -> float | None:
+        """Good-Turing: chance de a próxima incursão dar um item ainda não visto."""
+        return unseen_probability(self.singletons, self.runs)
+
+    @property
+    def absent_upper(self) -> float | None:
+        """Limite superior (95%) da chance de cada item cadastrado que ainda não saiu."""
+        return absent_upper_bound(self.runs)
+
+    def missing_for_absent_limit(self, limit: float) -> int:
+        """Incursões que faltam para o limite dos itens ausentes cair até `limit` (0 a 1)."""
+        return max(0, runs_for_absent_limit(limit) - self.runs)
+
+    def missing_for_margin(self, margin: float) -> int | None:
+        """Incursões que faltam para o item mais frequente ter margem de até `margin` (0 a 1)."""
+        if self.top_share is None:
+            return None
+        return max(0, runs_for_margin(self.top_share, margin) - self.runs)
+
+
+@dataclass(frozen=True)
+class ConvergenceSeries:
+    """Proporção acumulada de um item ao longo das incursões de uma masmorra."""
+
+    dungeon_name: str
+    item_label: str
+    hits: np.ndarray = field(repr=False)
+    proportion: np.ndarray = field(repr=False)
+    lower: np.ndarray = field(repr=False)
+    upper: np.ndarray = field(repr=False)
+
+    @property
+    def runs(self) -> int:
+        return len(self.hits)
+
+    @property
+    def final_hits(self) -> int:
+        return int(self.hits[-1]) if self.runs else 0
+
+    @property
+    def final_proportion(self) -> float | None:
+        return float(self.proportion[-1]) if self.runs else None
+
+    @property
+    def final_interval(self) -> tuple[float, float] | None:
+        return (float(self.lower[-1]), float(self.upper[-1])) if self.runs else None
+
+    @property
+    def final_margin(self) -> float | None:
+        interval = self.final_interval
+        return None if interval is None else (interval[1] - interval[0]) / 2
+
+    def margin_at(self, runs: int) -> float:
+        """Meia-largura do intervalo após as primeiras `runs` incursões."""
+        return float((self.upper[runs - 1] - self.lower[runs - 1]) / 2)
 
 
 @dataclass(frozen=True)
@@ -80,6 +162,7 @@ class DashboardData:
     availability: dict[int, set[int]] = field(default_factory=dict)
     undefined_items: list[Item] = field(default_factory=list)
     inconsistent_runs: list[InconsistentRun] = field(default_factory=list)
+    coverage: list[CoverageRow] = field(default_factory=list)
 
     def is_available(self, item_id: int, dungeon_id: int) -> bool:
         allowed = self.availability.get(item_id)
@@ -210,7 +293,10 @@ class AnalyticsService:
         shown = [item for item in items if item.is_active or by_item.get(item.id, 0) > 0]
         item_counts = [
             ItemCount(
-                item, by_item.get(item.id, 0), by_item.get(item.id, 0) / total if total else 0.0
+                item,
+                by_item.get(item.id, 0),
+                by_item.get(item.id, 0) / total if total else 0.0,
+                wilson_interval(by_item.get(item.id, 0), total),
             )
             for item in shown
         ]
@@ -248,7 +334,57 @@ class AnalyticsService:
             availability={i.id: {d.id for d in i.dungeons} for i in items if i.dungeons},
             undefined_items=[i for i in shown if not i.dungeons],
             inconsistent_runs=self._inconsistent(dungeons, items, counts),
+            coverage=self._coverage(dungeons, items, counts, by_dungeon),
         )
+
+    @staticmethod
+    def _coverage(dungeons, items, counts, by_dungeon) -> list[CoverageRow]:
+        rows = []
+        for dungeon in dungeons:
+            per_item = {
+                item_id: count
+                for (dungeon_id, item_id), count in counts.items()
+                if dungeon_id == dungeon.id and count > 0
+            }
+            registered = [i for i in items if i.is_active and _allowed(i, dungeon.id)]
+            item_by_id = {i.id: i for i in items}
+            top_id = max(per_item, key=lambda k: (per_item[k], -k), default=None)
+            runs = by_dungeon.get(dungeon.id, 0)
+            rows.append(
+                CoverageRow(
+                    dungeon=dungeon,
+                    runs=runs,
+                    registered_items=len(registered),
+                    seen_registered=sum(1 for i in registered if per_item.get(i.id, 0) > 0),
+                    seen_total=len(per_item),
+                    singletons=sum(1 for c in per_item.values() if c == 1),
+                    top_item=item_by_id[top_id] if top_id is not None else None,
+                    top_share=per_item[top_id] / runs if top_id is not None and runs else None,
+                )
+            )
+        return rows
+
+    def convergence(
+        self, dungeon_id: int, item_id: int, flt: RunFilter | None = None
+    ) -> ConvergenceSeries:
+        """Proporção acumulada do item nas incursões da masmorra, em ordem cronológica."""
+        base = flt or RunFilter()
+        scoped = replace(base, dungeon_ids=[dungeon_id], item_ids=None)
+        with session_scope(self._factory) as session:
+            dungeon = DungeonRepository(session).get(dungeon_id)
+            items = {i.id: i for i in ItemRepository(session).list()}
+            runs = RunRepository(session).list(scoped, descending=False)
+            sequence = np.array([1 if r.item_id == item_id else 0 for r in runs], dtype=np.int64)
+            dungeon_name = dungeon.name if dungeon else str(dungeon_id)
+            item = items.get(item_id)
+            label = item.display_name if item else str(item_id)
+        hits = np.cumsum(sequence)
+        if len(hits) == 0:
+            empty = np.array([], dtype=float)
+            return ConvergenceSeries(dungeon_name, label, hits, empty, empty, empty)
+        trials = np.arange(1, len(hits) + 1)
+        lower, upper = wilson_series(hits, trials)
+        return ConvergenceSeries(dungeon_name, label, hits, hits / trials, lower, upper)
 
     def analyze(
         self,

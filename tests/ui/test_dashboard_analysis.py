@@ -214,3 +214,53 @@ def test_dashboard_lista_apenas_masmorras_ativas(qapp, services, cenario):
     listadas = [combo.itemText(i) for i in range(combo.count())]
     assert listadas == ["Todas"] + nomes
     assert "n = 80" in page.dungeon_box.title()
+
+
+def test_dashboard_mostra_intervalo_de_confianca_nos_itens(qapp, services, cenario):
+    page = DashboardPage(services)
+    page.refresh()
+    assert page.item_table.horizontalHeaderItem(5).text() == "IC 95%"
+    assert cell(page.item_table, 0, 5) == "[41,2%; 58,8%]"
+    assert "IC de 95%" in page.item_chart.axes.get_title()
+    assert page.comparison_table.item(0, 1).toolTip().startswith("IC 95%: [")
+
+
+def test_dashboard_painel_de_cobertura_e_metas(qapp, services, cenario):
+    page = DashboardPage(services)
+    page.refresh()
+    linhas = {cell(page.coverage_table, r, 0): r for r in range(page.coverage_table.rowCount())}
+    r = linhas["Masmorra 1"]
+    assert cell(page.coverage_table, r, 1) == "40"
+    assert cell(page.coverage_table, r, 2) == "2 / 3"
+    assert cell(page.coverage_table, r, 3) == "0,0%"
+    assert cell(page.coverage_table, r, 4) == "8,8%"
+    assert cell(page.coverage_table, r, 5) == "341"
+    vazia = linhas["Masmorra 5"]
+    assert cell(page.coverage_table, vazia, 3) == "—"
+    assert cell(page.coverage_table, vazia, 6) == "—"
+    page.limit_spin.setValue(20.0)
+    assert cell(page.coverage_table, r, 5) == "✔ atingida"
+    antes = cell(page.coverage_table, r, 6)
+    page.margin_spin.setValue(20.0)
+    assert cell(page.coverage_table, r, 6) == "✔ atingida" and antes != "✔ atingida"
+
+
+def test_dashboard_convergencia_lista_so_o_que_tem_dados(qapp, services, cenario):
+    ds, its = cenario
+    page = DashboardPage(services)
+    page.refresh()
+    assert page.convergence_dungeon.count() == 3
+    assert page.convergence_item.count() == 2
+    assert not page.convergence_chart.is_empty
+    assert "em 40 incursões" in page.convergence_label.text()
+    page.convergence_dungeon.setCurrentIndex(page.convergence_dungeon.findData(ds[2].id))
+    assert "em 40 incursões" in page.convergence_label.text()
+    page.convergence_item.setCurrentIndex(1)
+    assert page.convergence_label.text() != ""
+
+
+def test_dashboard_convergencia_vazia_sem_dados(qapp, services, seeded):
+    page = DashboardPage(services)
+    page.refresh()
+    assert page.convergence_dungeon.count() == 0 and page.convergence_item.count() == 0
+    assert page.convergence_chart.is_empty and page.convergence_label.text() == ""

@@ -52,6 +52,11 @@ Itens e masmorras não são excluídos; para tirá-los de uso, inative-os (o his
 
 ## Análise
 
+- **Dashboard — confiança da amostra:** as tabelas e gráficos mostram o intervalo de confiança de 95% dos
+  percentuais; a seção "Cobertura e tamanho da amostra" indica, por masmorra, quantos itens já saíram, a chance de
+  vir um item inédito e quantas incursões faltam para as metas que você define; e "Convergência da estimativa"
+  mostra se a proporção de um item já estabilizou. Defina o total de incursões antes e não pare quando um item raro
+  aparecer, pois isso infla a estimativa dele.
 - **Dashboard:** mostra só as masmorras ativas (inative uma masmorra para tirá-la do painel; reativando, ela volta).
   Totais, distribuição dos itens, comparação entre masmorras e evolução ao longo do tempo. Os filtros
   valem para toda a página e cada seção mostra o tamanho da amostra (`n`).

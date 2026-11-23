@@ -53,13 +53,26 @@ class ChartCanvas(FigureCanvasQTAgg):
 
 
 def draw_bars(
-    canvas: ChartCanvas, title: str, labels: Sequence[str], values: Sequence[float], ylabel: str
+    canvas: ChartCanvas,
+    title: str,
+    labels: Sequence[str],
+    values: Sequence[float],
+    ylabel: str,
+    errors: tuple[Sequence[float], Sequence[float]] | None = None,
 ) -> None:
+    """Barras; `errors` são (distâncias abaixo, distâncias acima) do valor, em unidades do eixo."""
     if not labels or not any(values):
         canvas.show_empty(title)
         return
     canvas.reset(title)
-    canvas.axes.bar(range(len(labels)), values, color=PALETTE[0])
+    canvas.axes.bar(
+        range(len(labels)),
+        values,
+        color=PALETTE[0],
+        yerr=None if errors is None else [list(errors[0]), list(errors[1])],
+        capsize=3,
+        ecolor="#444444",
+    )
     canvas.axes.set_xticks(range(len(labels)), labels, rotation=30, ha="right", fontsize=8)
     canvas.axes.set_ylabel(ylabel)
     canvas.draw_idle()
@@ -111,4 +124,36 @@ def draw_lines(
     canvas.axes.set_ylabel(ylabel)
     canvas.axes.legend(fontsize=7, loc="upper left", bbox_to_anchor=(1.0, 1.0))
     canvas.figure.autofmt_xdate()
+    canvas.draw_idle()
+
+
+def draw_convergence(
+    canvas: ChartCanvas,
+    title: str,
+    proportion: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float],
+) -> None:
+    """Proporção acumulada (em %) com a faixa do intervalo de confiança a cada incursão."""
+    if len(proportion) < 2:
+        canvas.show_empty(title)
+        return
+    canvas.reset(title)
+    runs = range(1, len(proportion) + 1)
+    pct = [p * 100 for p in proportion]
+    canvas.axes.fill_between(
+        runs,
+        [v * 100 for v in lower],
+        [v * 100 for v in upper],
+        color=PALETTE[0],
+        alpha=0.2,
+        label="Intervalo de confiança (95%)",
+    )
+    canvas.axes.plot(runs, pct, color=PALETTE[0], label="Proporção acumulada")
+    canvas.axes.axhline(pct[-1], color="#888888", linestyle=":", linewidth=1)
+    canvas.axes.set_xlim(1, len(proportion))
+    canvas.axes.set_ylim(0, min(100.0, max(v * 100 for v in upper) * 1.1))
+    canvas.axes.set_xlabel("Incursões acumuladas")
+    canvas.axes.set_ylabel("% de obtenção")
+    canvas.axes.legend(fontsize=7, loc="upper right")
     canvas.draw_idle()

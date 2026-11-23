@@ -54,6 +54,19 @@ item. O serviço valida de novo ao salvar.
 
 ## Dashboard
 
+Três recursos ajudam a julgar o quanto os números são confiáveis:
+
+- **Intervalo de confiança (Wilson, 95%):** coluna "IC 95%" na tabela de itens, barras de erro no gráfico dos itens
+  mais frequentes e dica (tooltip) em cada célula da comparação item × masmorra.
+- **Cobertura e tamanho da amostra:** uma linha por masmorra com incursões, itens vistos / cadastrados (itens ativos
+  disponíveis nela), chance de a próxima incursão dar um item inédito (Good-Turing), limite máximo da chance de cada
+  item cadastrado ainda não obtido e quantas incursões faltam para as duas metas definidas na tela (margem de erro
+  do item mais frequente, padrão ± 2 p.p., e limite máximo dos itens ausentes, padrão 1%). "✔ atingida" indica meta
+  cumprida. As metas só recalculam a tabela; não consultam o banco de novo.
+- **Convergência da estimativa:** para a masmorra e o item escolhidos (só os que têm dados), mostra a proporção
+  acumulada ao longo das incursões em ordem cronológica, com a faixa do intervalo de confiança, e a margem atual
+  comparada à de metade da amostra. Respeita os filtros do painel.
+
 Só masmorras ativas entram no dashboard (listas, gráficos, totais e filtro de masmorra); as incursões de masmorras
 inativas ficam fora dos números do painel, mas continuam no histórico, na análise estatística e nas exportações.
 Filtros (período, masmorra, item, dificuldade, bônus, evento e versão) valem para toda a página, e cada seção
