@@ -201,3 +201,16 @@ def test_janela_principal_usa_dashboard_e_analise(qapp, services, settings, cena
     assert "120" in janela.pages["Dashboard"].kpis.text()
     janela.open_page("Análise estatística")
     assert janela.pages["Análise estatística"].item_combo.count() == 2
+
+
+def test_dashboard_lista_apenas_masmorras_ativas(qapp, services, cenario):
+    ds, _ = cenario
+    services.dungeons.set_active(ds[1].id, False)
+    page = DashboardPage(services)
+    page.refresh()
+    nomes = [cell(page.dungeon_table, r, 0) for r in range(page.dungeon_table.rowCount())]
+    assert nomes == [d.name for d in ds if d.id != ds[1].id]
+    combo = page.filters.dungeon_combo
+    listadas = [combo.itemText(i) for i in range(combo.count())]
+    assert listadas == ["Todas"] + nomes
+    assert "n = 80" in page.dungeon_box.title()

@@ -48,7 +48,8 @@ Itens e masmorras não são excluídos; para tirá-los de uso, inative-os (o his
 
 ## Análise
 
-- **Dashboard:** totais, distribuição dos itens, comparação entre masmorras e evolução ao longo do tempo. Os filtros
+- **Dashboard:** mostra só as masmorras ativas (inative uma masmorra para tirá-la do painel; reativando, ela volta).
+  Totais, distribuição dos itens, comparação entre masmorras e evolução ao longo do tempo. Os filtros
   valem para toda a página e cada seção mostra o tamanho da amostra (`n`).
 - **Análise estatística:** compara as masmorras item a item e na distribuição completa, com intervalo de confiança,
   valor-p bruto e ajustado, método usado e interpretação. A aba de dificuldade é exploratória.

@@ -156,3 +156,24 @@ def test_interpretacao():
     assert "indefinido" in interpret(None)
     assert "Foi detectada" in interpret(0.04, alpha=0.05)
     assert "Não foi detectada" in interpret(0.04, alpha=0.01)
+
+
+def test_dashboard_mostra_apenas_masmorras_ativas(analytics, cenario, dungeons):
+    ds, its = cenario
+    dungeons.set_active(ds[1].id, False)
+    dados = analytics.dashboard()
+    assert [c.dungeon.id for c in dados.dungeon_counts] == [d.id for d in ds if d.id != ds[1].id]
+    assert dados.total_runs == 40 + 40
+    assert set(dados.timeline) == {ds[0].name, ds[2].name}
+    assert ds[1].name not in {c.dungeon.name for c in dados.dungeon_counts}
+    assert all(d != ds[1].id for d, _ in dados.cells)
+    assert {c.item.id: c.count for c in dados.item_counts}[its[0].id] == 30 + 20
+    assert analytics.dashboard(RunFilter(dungeon_ids=[ds[1].id])).total_runs == 0
+    dungeons.set_active(ds[1].id, True)
+    assert analytics.dashboard().total_runs == 120
+
+
+def test_analise_continua_considerando_masmorras_inativas(analytics, cenario, dungeons):
+    ds, _ = cenario
+    dungeons.set_active(ds[1].id, False)
+    assert ds[1].name in [d.name for d in analytics.analyze().dungeons]

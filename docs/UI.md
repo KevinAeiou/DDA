@@ -49,6 +49,8 @@ item. O serviço valida de novo ao salvar.
 
 ## Dashboard
 
+Só masmorras ativas entram no dashboard (listas, gráficos, totais e filtro de masmorra); as incursões de masmorras
+inativas ficam fora dos números do painel, mas continuam no histórico, na análise estatística e nas exportações.
 Filtros (período, masmorra, item, dificuldade, bônus, evento e versão) valem para toda a página, e cada seção
 mostra o tamanho da amostra (`n`). Conteúdo: totais (amostra, itens distintos, masmorras com dados), incursões
 por masmorra, distribuição geral dos itens (gráfico dos 15 mais frequentes, tabela completa e texto com o item

@@ -27,7 +27,7 @@ class DashboardPage(Page):
     def __init__(self, services: Services, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.services = services
-        self.filters = FilterPanel(show_item=True)
+        self.filters = FilterPanel(show_item=True, active_dungeons_only=True)
         self.filters.applied.connect(self.reload)
 
         self.kpis = QLabel()

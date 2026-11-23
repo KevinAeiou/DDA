@@ -26,8 +26,14 @@ from .formatting import QT_DATETIME_FORMAT, TRISTATE_LABELS
 class FilterPanel(QGroupBox):
     applied = Signal()
 
-    def __init__(self, show_item: bool = True, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        show_item: bool = True,
+        active_dungeons_only: bool = False,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__("Filtros", parent)
+        self._active_dungeons_only = active_dungeons_only
         self.use_from = QCheckBox("De")
         self.date_from = self._date_edit(self.use_from)
         self.use_to = QCheckBox("Até")
@@ -99,7 +105,7 @@ class FilterPanel(QGroupBox):
         }
         self.dungeon_combo.clear()
         self.dungeon_combo.addItem("Todas", None)
-        for dungeon in services.dungeons.list():
+        for dungeon in services.dungeons.list(active_only=self._active_dungeons_only):
             self.dungeon_combo.addItem(dungeon.name, dungeon.id)
         self.item_combo.clear()
         self.item_combo.addItem("Todos", None)

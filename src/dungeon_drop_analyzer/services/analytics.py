@@ -190,7 +190,12 @@ class AnalyticsService:
         )
 
     def dashboard(self, flt: RunFilter | None = None) -> DashboardData:
+        """Painel apenas com masmorras ativas: as inativas não entram em listas nem em totais."""
         dungeons, items, cells, timeline = self._load(flt)
+        dungeons = [d for d in dungeons if d.is_active]
+        active_ids = {d.id for d in dungeons}
+        cells = [cell for cell in cells if cell[0] in active_ids]
+        timeline = [point for point in timeline if point[1] in active_ids]
         counts = {(d, i): c for d, i, c in cells}
         by_dungeon: dict[int, int] = defaultdict(int)
         by_item: dict[int, int] = defaultdict(int)
