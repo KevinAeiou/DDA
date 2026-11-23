@@ -28,6 +28,11 @@ ficam no diretório de dados descrito em [PERSISTENCE.md](PERSISTENCE.md).
 
 ## Itens, categorias e masmorras
 
+Buscas por texto (filtro por nome das páginas de masmorras e itens e busca de item no registro de incursão) ignoram
+maiúsculas, acentos e espaços e procuram o trecho em qualquer parte do nome: "reinoda" encontra "Reino da Aranha" e
+"mercenario" encontra todos os itens com "Mercenário". A normalização (`ui/widgets/search.py`) é feita só na busca; o
+nome gravado e exibido não muda. Na busca do registro, o item escolhido continua sendo o da lista.
+
 No cadastro e na edição de item há também a lista **Masmorra(s)** (marcação múltipla, com os botões "Todas" e
 "Nenhuma"): ao menos uma é obrigatória. No cadastro (não na edição), o botão **Salvar e cadastrar outro** salva o item e
 mantém o formulário aberto, limpando só nome e descrição (categoria, masmorras e situação são mantidas) e exibindo a
@@ -88,7 +93,7 @@ substituídos nos testes.
 ## Registrar incursão
 
 Masmorra e item ficam em destaque; os demais campos (data/hora, duração, versão, bônus, evento e observações)
-ficam em "Mais opções", recolhido por padrão. O item pode ser digitado com busca por trecho do nome e precisa
+ficam em "Mais opções", recolhido por padrão. O item pode ser digitado com busca por trecho do nome (sem acentos, maiúsculas ou espaços) e precisa
 corresponder a um item cadastrado. Após salvar, o item e as observações são limpos, a data/hora volta para o
 instante atual e a masmorra permanece selecionada para registros em sequência. Sem masmorras ou itens ativos,
 a página orienta o cadastro e desabilita o botão.

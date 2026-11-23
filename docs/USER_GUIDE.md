@@ -28,6 +28,10 @@ dados existentes não são movidos: crie um backup e restaure-o depois).
 3. **Registrar incursão:** escolha a masmorra (só então a busca de itens é habilitada, e ela lista apenas os itens cadastrados para essa masmorra) e o item recebido e clique em "Salvar incursão". Em "Mais opções" é
    possível ajustar data/hora, duração, versão do jogo, bônus de drop, evento ativo e observações. Cada incursão
    concluída rende exatamente um item.
+
+**Buscas por texto:** o filtro de nome das páginas Masmorras e Itens e a busca de item no registro de incursão ignoram
+maiúsculas, acentos e espaços. Exemplos: "reinoda" encontra "Reino da Aranha"; "mercenario" encontra todos os
+itens com "Mercenário".
 4. **Histórico:** consulte, filtre, corrija ou exclua incursões. Correções e exclusões ficam registradas na auditoria.
 
 **Itens cadastrados antes do campo Masmorra:** edite cada um e marque as masmorras em que pode ser obtido. Enquanto
