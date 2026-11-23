@@ -7,7 +7,13 @@ from PySide6.QtWidgets import QPushButton
 from sqlalchemy import text
 
 from dungeon_drop_analyzer.ui.dialogs import ItemDialog
-from dungeon_drop_analyzer.ui.pages import AnalysisPage, DashboardPage, ItemsPage, RegisterRunPage
+from dungeon_drop_analyzer.ui.pages import (
+    AnalysisPage,
+    DashboardPage,
+    DungeonsPage,
+    ItemsPage,
+    RegisterRunPage,
+)
 
 
 def cell(table, row, column):
@@ -378,3 +384,44 @@ def test_registro_distingue_itens_de_mesmo_nome_pela_categoria(qapp, services, r
     combo = page.form.item_combo
     nomes = [combo.itemText(i) for i in range(combo.count())]
     assert "A (Armas)" in nomes and "A (Consumíveis)" in nomes and "A2" in nomes
+
+
+def test_filtro_de_itens_ignora_acentos_e_espacos(qapp, services, restrito):
+    d, _ = restrito
+    services.items.create("Capa do Mercenário", "accessories", [d[0].id])
+    services.items.create("Colar do Mercenário", "accessories", [d[0].id])
+    page = ItemsPage(services)
+    page.refresh()
+    page.filter_edit.setText("mercenario")
+    nomes = sorted(cell(page.table, r, 0) for r in range(page.table.rowCount()))
+    assert nomes == ["Capa do Mercenário", "Colar do Mercenário"]
+    page.filter_edit.setText("capado")
+    assert page.table.rowCount() == 1
+    page.filter_edit.setText("MERCENÁRIO")
+    assert page.table.rowCount() == 2
+
+
+def test_filtro_de_masmorras_ignora_acentos_e_espacos(qapp, services):
+    services.dungeons.create("Reino da Aranha", 1)
+    services.dungeons.create("Morada da Serpente", 1)
+    page = DungeonsPage(services)
+    page.refresh()
+    page.filter_edit.setText("reinoda")
+    assert [cell(page.table, r, 0) for r in range(page.table.rowCount())] == ["Reino da Aranha"]
+
+
+def test_busca_de_itens_no_registro_ignora_acentos_e_espacos(qapp, services, restrito):
+    d, _ = restrito
+    services.items.create("Capa do Mercenário", "accessories", [d[0].id])
+    services.items.create("Cinto do Mercenário", "armor", [d[0].id])
+    page = RegisterRunPage(services)
+    page.refresh()
+    page.form.dungeon_combo.setCurrentIndex(page.form.dungeon_combo.findData(d[0].id))
+    completer = page.form.item_combo.completer()
+    completer.setCompletionPrefix("mercenario")
+    assert completer.completionCount() == 2
+    completer.setCompletionPrefix("capado")
+    assert completer.completionCount() == 1
+    assert completer.pathFromIndex(completer.completionModel().index(0, 0)) == "Capa do Mercenário"
+    completer.setCompletionPrefix("zzz")
+    assert completer.completionCount() == 0

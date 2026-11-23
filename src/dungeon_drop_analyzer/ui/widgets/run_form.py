@@ -9,7 +9,6 @@ from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
-    QCompleter,
     QDateTimeEdit,
     QFormLayout,
     QGroupBox,
@@ -29,6 +28,7 @@ from .formatting import (
     to_local_naive,
     to_qdatetime,
 )
+from .search import SearchCompleter, add_searchable_item
 
 NO_DURATION = -1
 MAX_DURATION = 999_999
@@ -43,10 +43,7 @@ class RunForm(QWidget):
         self.item_combo.setEditable(True)
         self.item_combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.item_combo.lineEdit().setPlaceholderText("Selecione ou digite o item")
-        completer = QCompleter(self.item_combo.model(), self.item_combo)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        self.item_combo.setCompleter(completer)
+        self.item_combo.setCompleter(SearchCompleter(self.item_combo))
 
         self.completed_at = QDateTimeEdit(now_qdatetime())
         self.completed_at.setDisplayFormat(QT_DATETIME_FORMAT)
@@ -109,7 +106,7 @@ class RunForm(QWidget):
             )
         self.item_combo.clear()
         for item in items:
-            self.item_combo.addItem(item.display_name, item.id)
+            add_searchable_item(self.item_combo, item.display_name, item.id)
         self._select(self.dungeon_combo, dungeon_id)
         self._select(self.item_combo, item_id)
 
@@ -123,7 +120,7 @@ class RunForm(QWidget):
         item_id = self.selected_item_id()
         self.item_combo.clear()
         for item in items:
-            self.item_combo.addItem(item.display_name, item.id)
+            add_searchable_item(self.item_combo, item.display_name, item.id)
         self._select(self.item_combo, item_id)
 
     @staticmethod

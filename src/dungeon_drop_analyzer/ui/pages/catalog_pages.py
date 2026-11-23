@@ -21,6 +21,7 @@ from dungeon_drop_analyzer.ui.widgets.formatting import (
     format_item_dungeons,
 )
 from dungeon_drop_analyzer.ui.widgets.messages import guarded, show_error
+from dungeon_drop_analyzer.ui.widgets.search import matches_search
 
 from .base import Page, fill_table, make_table, selected_id
 
@@ -84,9 +85,9 @@ class _CatalogPage(Page):
         raise NotImplementedError
 
     def refresh(self) -> None:
-        text = self.filter_edit.text().strip().casefold()
+        text = self.filter_edit.text()
         entities = [
-            e for e in self._entities() if text in e.name.casefold() and self._extra_match(e)
+            e for e in self._entities() if matches_search(text, e.name) and self._extra_match(e)
         ]
         fill_table(self.table, [(e.id, self._row(e)) for e in entities])
         total = len(self._entities())
