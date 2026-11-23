@@ -177,3 +177,68 @@ def test_analise_continua_considerando_masmorras_inativas(analytics, cenario, du
     ds, _ = cenario
     dungeons.set_active(ds[1].id, False)
     assert ds[1].name in [d.name for d in analytics.analyze().dungeons]
+
+
+def test_dashboard_traz_intervalo_de_wilson_por_item(analytics, cenario):
+    from dungeon_drop_analyzer.statistics import wilson_interval
+
+    dados = analytics.dashboard()
+    por_item = {c.item.name: c for c in dados.item_counts}
+    contagem = por_item["Item A"]
+    assert contagem.count == 60 and contagem.ci == wilson_interval(60, 120)
+    assert por_item["Item C"].ci == wilson_interval(0, 120)
+    assert analytics.dashboard(RunFilter(dungeon_ids=[99999])).item_counts[0].ci is None
+
+
+def test_cobertura_por_masmorra(analytics, cenario, runs):
+    from dungeon_drop_analyzer.statistics import runs_for_absent_limit, runs_for_margin
+
+    ds, its = cenario
+    registrar(runs, ds[3], its[0], 1, dia=5)
+    registrar(runs, ds[3], its[1], 1, dia=5)
+    registrar(runs, ds[3], its[0], 2, dia=6)
+    linhas = {c.dungeon.id: c for c in analytics.dashboard().coverage}
+    primeira = linhas[ds[0].id]
+    assert primeira.runs == 40 and primeira.registered_items == 3
+    assert primeira.seen_registered == 2 and primeira.unseen_registered == 1
+    assert primeira.singletons == 0 and primeira.unseen_chance == 0.0
+    assert primeira.top_item.name == "Item A" and primeira.top_share == pytest.approx(0.75)
+    assert primeira.absent_upper == pytest.approx(3.8415 / (40 + 3.8415), abs=1e-3)
+    assert primeira.missing_for_absent_limit(0.01) == runs_for_absent_limit(0.01) - 40
+    assert primeira.missing_for_margin(0.02) == runs_for_margin(0.75, 0.02) - 40
+    assert primeira.missing_for_absent_limit(0.5) == 0
+    esparsa = linhas[ds[3].id]
+    assert esparsa.runs == 4 and esparsa.singletons == 1
+    assert esparsa.unseen_chance == pytest.approx(0.25)
+    vazia = linhas[ds[4].id]
+    assert vazia.runs == 0 and vazia.unseen_chance is None and vazia.absent_upper is None
+    assert vazia.top_share is None and vazia.missing_for_margin(0.02) is None
+    assert vazia.missing_for_absent_limit(0.01) == runs_for_absent_limit(0.01)
+
+
+def test_cobertura_considera_so_itens_ativos_e_disponiveis(analytics, cenario, items):
+    ds, its = cenario
+    items.set_active(its[2].id, False)
+    linha = next(c for c in analytics.dashboard().coverage if c.dungeon.id == ds[0].id)
+    assert linha.registered_items == 2 and linha.unseen_registered == 0
+
+
+def test_convergencia_acumula_na_ordem_cronologica(analytics, cenario):
+    from dungeon_drop_analyzer.statistics import wilson_interval
+
+    ds, its = cenario
+    serie = analytics.convergence(ds[0].id, its[0].id)
+    assert serie.runs == 40 and serie.final_hits == 30
+    assert serie.final_proportion == pytest.approx(0.75)
+    assert list(serie.hits[:3]) == [1, 2, 3]
+    assert serie.final_interval == pytest.approx(wilson_interval(30, 40))
+    assert serie.margin_at(10) > serie.final_margin
+    assert serie.dungeon_name == ds[0].name and serie.item_label == its[0].name
+
+
+def test_convergencia_respeita_filtros_e_trata_serie_vazia(analytics, cenario):
+    ds, its = cenario
+    so_bonus = analytics.convergence(ds[2].id, its[0].id, RunFilter(bonus_status="yes"))
+    assert so_bonus.runs == 40 and so_bonus.final_hits == 20
+    vazia = analytics.convergence(ds[0].id, its[0].id, RunFilter(bonus_status="yes"))
+    assert vazia.runs == 0 and vazia.final_proportion is None and vazia.final_margin is None

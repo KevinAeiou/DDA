@@ -91,3 +91,23 @@ availability=...)` e `AnalyticsService`:
 
 `ItemAnalysis.dungeons` lista as masmorras consideradas em cada item, e `AnalysisReport` expõe a matriz de
 disponibilidade, os itens comuns, os itens sem masmorras definidas e as incursões inconsistentes.
+
+## Planejamento da amostra e cobertura (dashboard)
+
+Funções puras em `statistics/proportions.py`, usadas pelo dashboard (`AnalyticsService.dashboard().coverage` e
+`AnalyticsService.convergence`):
+
+- `wilson_series(x, n)`: limites de Wilson vetorizados, usados na convergência (intervalo após cada incursão).
+- `runs_for_margin(p, margem)`: menor `n` para o qual a meia-largura do intervalo de Wilson em `p` é no máximo
+  `margem`. O dashboard usa a proporção já observada do item mais frequente da masmorra como `p`; é uma estimativa
+  e muda conforme os dados chegam.
+- `absent_upper_bound(n)` e `runs_for_absent_limit(limite)`: para um item que não saiu em `n` incursões, o limite
+  superior de Wilson é `z² / (n + z²)` (≈ 3/n com 95% de confiança); o inverso dá as incursões necessárias para que
+  esse limite caia até o valor desejado (`n ≥ z² (1/limite − 1)`).
+- `unseen_probability(unicos, n)`: estimativa de Good-Turing da chance de a próxima incursão dar um item ainda não
+  visto (itens vistos uma única vez ÷ `n`). É uma estimativa, não um intervalo.
+
+"Itens vistos / cadastrados" conta os itens ativos disponíveis na masmorra (itens sem masmorras definidas valem em
+todas); itens obtidos fora do cadastro aparecem à parte. Todas as metas supõem incursões independentes e `n`
+definido antes da coleta: parar quando um item raro aparece infla a estimativa dele. As contas valem apenas para as
+masmorras ativas e para os filtros aplicados no painel.
